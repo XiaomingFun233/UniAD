@@ -9,22 +9,202 @@ import copy
 import os
 import time
 import warnings
-from mmcv import Config, DictAction
-from mmcv.runner import get_dist_info, init_dist
 from os import path as osp
+
+try:
+    from mmcv import Config, DictAction
+    from mmcv.runner import get_dist_info, init_dist
+    from mmcv.utils import TORCH_VERSION, digit_version
+except Exception:
+    from mmcv_wrapper import Config, DictAction
+    from mmcv_wrapper import get_dist_info, init_dist
+    from mmengine.utils import digit_version
+    TORCH_VERSION = torch.__version__
 
 from mmdet import __version__ as mmdet_version
 from mmdet3d import __version__ as mmdet3d_version
 
-from mmdet3d.datasets import build_dataset
-from mmdet3d.models import build_model
-from mmdet3d.utils import collect_env, get_root_logger
-from mmdet.apis import set_random_seed
-from mmseg import __version__ as mmseg_version
+try:
+    from mmdet3d.datasets import build_dataset
+except Exception:
+    build_dataset = None
+try:
+    from mmdet3d.models import build_model
+except Exception:
+    build_model = None
+try:
+    from mmdet3d.utils import collect_env, get_root_logger
+except Exception:
+    from mmdet3d.utils import collect_env
+    from mmengine.logging import MMLogger
+
+    def get_root_logger(log_file=None, log_level='INFO', name='mmdet'):
+        return MMLogger.get_instance(name, log_file=log_file, log_level=log_level)
+try:
+    from mmdet.apis import set_random_seed
+except Exception:
+    from mmengine.runner import set_random_seed
+try:
+    from mmseg import __version__ as mmseg_version
+except Exception:
+    mmseg_version = 'unknown'
 
 warnings.filterwarnings("ignore")
 
-from mmcv.utils import TORCH_VERSION, digit_version
+
+def _build_dataset_compat(cfg):
+    cfg = copy.deepcopy(cfg)
+    if isinstance(cfg, dict) and 'classes' in cfg:
+        classes = cfg.pop('classes')
+        metainfo = dict(cfg.get('metainfo', {}))
+        metainfo.setdefault('classes', tuple(classes))
+        cfg['metainfo'] = metainfo
+    # mmdet3d 1.x may join data_root + ann_file; convert known local ann files to absolute paths.
+    if isinstance(cfg, dict) and 'ann_file' in cfg:
+        ann_file = cfg['ann_file']
+        repo_root = osp.abspath(osp.join(osp.dirname(__file__), '..'))
+
+        def _abspath_if_exists(path):
+            if not isinstance(path, str) or osp.isabs(path):
+                return path
+            local_path = osp.join(repo_root, path.lstrip('./'))
+            if osp.exists(local_path):
+                return local_path
+            return path
+
+        if isinstance(ann_file, str):
+            cfg['ann_file'] = _abspath_if_exists(ann_file)
+        elif isinstance(ann_file, (list, tuple)):
+            cfg['ann_file'] = [_abspath_if_exists(p) for p in ann_file]
+    if build_dataset is not None:
+        return build_dataset(cfg)
+    from mmdet3d.registry import DATASETS
+    return DATASETS.build(cfg)
+
+
+def _build_model_compat(model_cfg, train_cfg=None, test_cfg=None):
+    if build_model is not None:
+        return build_model(model_cfg, train_cfg=train_cfg, test_cfg=test_cfg)
+    from mmdet3d.registry import MODELS
+    model_cfg = copy.deepcopy(model_cfg)
+    if train_cfg is not None and 'train_cfg' not in model_cfg:
+        model_cfg['train_cfg'] = train_cfg
+    if test_cfg is not None and 'test_cfg' not in model_cfg:
+        model_cfg['test_cfg'] = test_cfg
+    try:
+        return MODELS.build(model_cfg)
+    except KeyError:
+        # Some UniAD custom modules are registered into mmdet::MODELS in mmcv2 stacks.
+        from mmdet.registry import MODELS as MMDET_MODELS
+        return MMDET_MODELS.build(model_cfg)
+
+
+def _bootstrap_legacy_stack_shims():
+    """Reuse compatibility shims from tools/test.py when running on mmcv2/mmdet3."""
+    try:
+        from test import (
+            _bootstrap_mmcv_shims,
+            _bootstrap_mmdet_core_shim,
+            _bootstrap_mmdet_models_shim,
+            _bootstrap_mmdet_models_utils_shim,
+            _bootstrap_mmdet_datasets_shim,
+            _bootstrap_mmdet3d_datasets_pipelines_shim,
+            _bootstrap_mmdet3d_core_shim,
+        )
+        _bootstrap_mmcv_shims()
+        _bootstrap_mmdet_core_shim()
+        _bootstrap_mmdet_models_shim()
+        _bootstrap_mmdet_models_utils_shim()
+        _bootstrap_mmdet_datasets_shim()
+        _bootstrap_mmdet3d_datasets_pipelines_shim()
+        _bootstrap_mmdet3d_core_shim()
+    except Exception as e:
+        warnings.warn(f"Compat shims bootstrap skipped: {e}")
+
+
+def _sync_custom_model_registries():
+    """Mirror model registrations from mmdet to mmdet3d for mixed old/new stacks."""
+    try:
+        from mmdet.registry import MODELS as MMDET_MODELS
+        from mmdet3d.registry import MODELS as MMDET3D_MODELS
+    except Exception:
+        return
+
+    for name, module in MMDET_MODELS.module_dict.items():
+        if name in MMDET3D_MODELS.module_dict:
+            continue
+        try:
+            MMDET3D_MODELS.register_module(module=module, name=name, force=True)
+        except Exception:
+            pass
+
+
+def _sync_registry_modules(src_registry, dst_registry):
+    try:
+        items = src_registry.module_dict.items()
+    except Exception:
+        return
+    for name, module in items:
+        if name in dst_registry.module_dict:
+            continue
+        try:
+            dst_registry.register_module(module=module, name=name, force=True)
+        except Exception:
+            pass
+
+
+def _sync_cross_stack_registries():
+    """Sync core registries between mmdet/mmdet3d and mmengine."""
+    try:
+        from mmdet.registry import MODELS as MMDET_MODELS, TRANSFORMS as MMDET_TRANSFORMS
+        from mmdet3d.registry import MODELS as MMDET3D_MODELS, TRANSFORMS as MMDET3D_TRANSFORMS
+        from mmengine.registry import MODELS as MMENGINE_MODELS, TRANSFORMS as MMENGINE_TRANSFORMS
+    except Exception:
+        return
+
+    _sync_registry_modules(MMDET_MODELS, MMDET3D_MODELS)
+    _sync_registry_modules(MMDET_MODELS, MMENGINE_MODELS)
+    _sync_registry_modules(MMDET3D_MODELS, MMENGINE_MODELS)
+
+    _sync_registry_modules(MMDET_TRANSFORMS, MMENGINE_TRANSFORMS)
+    _sync_registry_modules(MMDET3D_TRANSFORMS, MMENGINE_TRANSFORMS)
+
+
+def _register_legacy_pipeline_transforms():
+    """Register UniAD pipeline transforms into new registries."""
+    try:
+        import projects.mmdet3d_plugin.datasets.pipelines  # noqa: F401
+        from mmdet.registry import TRANSFORMS as MMDET_TRANSFORMS
+        from mmdet3d.registry import TRANSFORMS as MMDET3D_TRANSFORMS
+        from mmengine.registry import TRANSFORMS as MMENGINE_TRANSFORMS
+        from projects.mmdet3d_plugin.datasets.pipelines.loading import (
+            LoadMultiViewImageFromFilesInCeph, LoadAnnotations3D_E2E)
+        from projects.mmdet3d_plugin.datasets.pipelines.transform_3d import (
+            PadMultiViewImage, NormalizeMultiviewImage, CustomCollect3D,
+            PhotoMetricDistortionMultiViewImage, RandomScaleImageMultiViewImage,
+            ObjectRangeFilterTrack, ObjectNameFilterTrack)
+        from projects.mmdet3d_plugin.datasets.pipelines.occflow_label import GenerateOccFlowLabels
+        from mmdet3d.datasets.transforms import MultiScaleFlipAug3D
+        from mmdet3d.datasets.pipelines import DefaultFormatBundle3D
+    except Exception:
+        return
+
+    for cls in [
+            LoadMultiViewImageFromFilesInCeph,
+            LoadAnnotations3D_E2E,
+            PadMultiViewImage,
+            NormalizeMultiviewImage,
+            CustomCollect3D,
+            PhotoMetricDistortionMultiViewImage,
+            RandomScaleImageMultiViewImage,
+            ObjectRangeFilterTrack,
+            ObjectNameFilterTrack,
+            GenerateOccFlowLabels,
+            MultiScaleFlipAug3D,
+            DefaultFormatBundle3D]:
+        for registry in (MMENGINE_TRANSFORMS, MMDET_TRANSFORMS, MMDET3D_TRANSFORMS):
+            if cls.__name__ not in registry.module_dict:
+                registry.register_module(module=cls, force=True)
 
 
 def parse_args():
@@ -98,13 +278,28 @@ def parse_args():
 
 def main():
     args = parse_args()
+    mmcv_major = 0
+    try:
+        mmcv_major = int(str(mmcv.__version__).split('.')[0])
+    except Exception:
+        pass
+    if mmcv_major >= 2:
+        _bootstrap_legacy_stack_shims()
+    try:
+        from mmdet3d.utils import register_all_modules
+        register_all_modules(init_default_scope=False)
+    except Exception:
+        pass
 
     cfg = Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
     # import modules from string list.
     if cfg.get('custom_imports', None):
-        from mmcv.utils import import_modules_from_strings
+        try:
+            from mmcv.utils import import_modules_from_strings
+        except Exception:
+            from mmengine.utils import import_modules_from_strings
         import_modules_from_strings(**cfg['custom_imports'])
 
     # import modules from plguin/xx, registry will be updated
@@ -130,6 +325,9 @@ def main():
                     _module_path = _module_path + '.' + m
                 print(_module_path)
                 plg_lib = importlib.import_module(_module_path)
+            _sync_custom_model_registries()
+            _sync_cross_stack_registries()
+            _register_legacy_pipeline_transforms()
 
             from projects.mmdet3d_plugin.uniad.apis.train import custom_train_model
     # set cudnn_benchmark
@@ -206,14 +404,14 @@ def main():
     meta['seed'] = args.seed
     meta['exp_name'] = osp.basename(args.config)
 
-    model = build_model(
+    model = _build_model_compat(
         cfg.model,
         train_cfg=cfg.get('train_cfg'),
         test_cfg=cfg.get('test_cfg'))
     model.init_weights()
 
     logger.info(f'Model:\n{model}')
-    datasets = [build_dataset(cfg.data.train)]
+    datasets = [_build_dataset_compat(cfg.data.train)]
     if len(cfg.workflow) == 2:
         val_dataset = copy.deepcopy(cfg.data.val)
         # in case we use a dataset wrapper
@@ -225,7 +423,7 @@ def main():
         # which do not affect AP/AR calculation later
         # refer to https://mmdetection3d.readthedocs.io/en/latest/tutorials/customize_runtime.html#customize-workflow  # noqa
         val_dataset.test_mode = False
-        datasets.append(build_dataset(val_dataset))
+        datasets.append(_build_dataset_compat(val_dataset))
     if cfg.checkpoint_config is not None:
         # save mmdet version, config file content and class names in
         # checkpoints as meta data

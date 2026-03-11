@@ -313,16 +313,33 @@ class ClipMatcher(nn.Module):
         # The matched gt for disappear track query is set -1.
         labels = []
         for gt_per_img, (_, J) in zip(gt_instances, indices):
+            if not torch.is_tensor(J):
+                J = torch.as_tensor(J, device=src_logits.device)
+            else:
+                J = J.to(src_logits.device)
+            J = J.long()
             labels_per_img = torch.ones_like(J) * self.num_classes
             # set labels of track-appear slots to num_classes
             if len(gt_per_img) > 0:
-                labels_per_img[J != -1] = gt_per_img.labels[J[J != -1]]
+                gt_labels = gt_per_img.labels
+                if not torch.is_tensor(gt_labels):
+                    gt_labels = torch.as_tensor(gt_labels, device=src_logits.device)
+                else:
+                    gt_labels = gt_labels.to(src_logits.device)
+                gt_labels = gt_labels.long()
+                valid = J != -1
+                labels_per_img[valid] = gt_labels[J[valid]]
             labels.append(labels_per_img)
         # [num_matched]
         target_classes_o = torch.cat(labels)
         # [bs, num_query]
         target_classes[idx] = target_classes_o
-        target_sdc_classes = gt_instances[0].sdc_labels[0:1].unsqueeze(0)
+        target_sdc_classes = gt_instances[0].sdc_labels
+        if not torch.is_tensor(target_sdc_classes):
+            target_sdc_classes = torch.as_tensor(target_sdc_classes, device=src_logits.device)
+        else:
+            target_sdc_classes = target_sdc_classes.to(src_logits.device)
+        target_sdc_classes = target_sdc_classes.long()[0:1].unsqueeze(0)
         if sdc_logits is not None:
             src_logits = torch.cat([src_logits, sdc_logits], dim=1)
             target_classes = torch.cat([target_classes, target_sdc_classes], dim=1)
@@ -438,15 +455,25 @@ class ClipMatcher(nn.Module):
             bs, num_querys = bbox_preds.shape[:2]
             # Also concat the target labels and boxes
             targets = [untracked_gt_instances]
+
+            def _to_tensor_on_device(x, device):
+                if torch.is_tensor(x):
+                    return x.to(device=device)
+                return torch.as_tensor(x, device=device)
+
             if isinstance(targets[0], Instances):
                 # [num_box], [num_box, 9] (un-normalized bboxes)
                 gt_labels = torch.cat(
-                    [gt_per_img.labels for gt_per_img in targets])
+                    [_to_tensor_on_device(gt_per_img.labels, pred_logits_i.device)
+                     for gt_per_img in targets])
                 gt_bboxes = torch.cat(
-                    [gt_per_img.boxes for gt_per_img in targets])
+                    [_to_tensor_on_device(gt_per_img.boxes, pred_logits_i.device)
+                     for gt_per_img in targets])
             else:
-                gt_labels = torch.cat([v["labels"] for v in targets])
-                gt_bboxes = torch.cat([v["boxes"] for v in targets])
+                gt_labels = torch.cat(
+                    [_to_tensor_on_device(v["labels"], pred_logits_i.device) for v in targets])
+                gt_bboxes = torch.cat(
+                    [_to_tensor_on_device(v["boxes"], pred_logits_i.device) for v in targets])
 
             bbox_pred = bbox_preds[0]
             cls_pred = cls_preds[0]
@@ -614,6 +641,6 @@ class ClipMatcher(nn.Module):
                 self.losses_dict["pred_loss_{}".format(i)] = pred_loss_i
             else:
                 self.losses_dict["pred_loss_{}".format(i)] = torch.tensor(
-                    [0.0]).cuda()
+                    [0.0]).musa()
 
             decay_ratio = decay_ratio * 0.5

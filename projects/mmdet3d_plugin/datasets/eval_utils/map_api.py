@@ -31,7 +31,10 @@ from nuscenes.utils.geometry_utils import view_points
 from functools import partial
 
 # Recommended style to use as the plots will show grids.
-plt.style.use('seaborn-whitegrid')
+try:
+    plt.style.use('seaborn-whitegrid')
+except OSError:
+    plt.style.use('default')
 
 # Define a map geometry type for polygons and lines.
 Geometry = Union[Polygon, LineString]
@@ -89,7 +92,13 @@ class NuScenesMap:
         self.layer_names = self.geometric_layers + self.lookup_polygon_layers + self.non_geometric_line_layers
 
         # Load the selected map.
-        self.json_fname = os.path.join(self.dataroot, 'maps', 'expansion', '{}.json'.format(self.map_name))
+        # Support both legacy layout:
+        #   {dataroot}/maps/expansion/{map_name}.json
+        # and newer layout:
+        #   {dataroot}/expansion/{map_name}.json
+        legacy_json = os.path.join(self.dataroot, 'maps', 'expansion', f'{self.map_name}.json')
+        new_json = os.path.join(self.dataroot, 'expansion', f'{self.map_name}.json')
+        self.json_fname = legacy_json if os.path.exists(legacy_json) else new_json
         with open(self.json_fname, 'r') as fh:
             self.json_obj = json.load(fh)
 
@@ -2088,14 +2097,27 @@ class NuScenesMapExplorer:
         :param mask: Canvas where mask will be generated.
         :return: Numpy ndarray polygon mask.
         """
-        if not polygons:
+        if polygons is None:
+            return mask
+        if hasattr(polygons, 'is_empty') and polygons.is_empty:
             return mask
 
         def int_coords(x):
             # function to round and convert to int
             return np.array(x).round().astype(np.int32)
-        exteriors = [int_coords(poly.exterior.coords) for poly in polygons]
-        interiors = [int_coords(pi.coords) for poly in polygons for pi in poly.interiors]
+
+        if isinstance(polygons, Polygon):
+            polygon_list = [polygons]
+        elif hasattr(polygons, 'geoms'):
+            polygon_list = [poly for poly in polygons.geoms if isinstance(poly, Polygon)]
+        else:
+            polygon_list = [poly for poly in polygons if isinstance(poly, Polygon)]
+
+        if not polygon_list:
+            return mask
+
+        exteriors = [int_coords(poly.exterior.coords) for poly in polygon_list]
+        interiors = [int_coords(pi.coords) for poly in polygon_list for pi in poly.interiors]
         cv2.fillPoly(mask, exteriors, 1)
         cv2.fillPoly(mask, interiors, 0)
         return mask
@@ -2109,7 +2131,8 @@ class NuScenesMapExplorer:
         :return: Numpy ndarray line mask.
         """
         if lines.geom_type == 'MultiLineString':
-            for line in lines:
+            line_iter = lines.geoms if hasattr(lines, 'geoms') else lines
+            for line in line_iter:
                 coords = np.asarray(list(line.coords), np.int32)
                 coords = coords.reshape((-1, 2))
                 cv2.polylines(mask, [coords], False, 1, 2)

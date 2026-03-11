@@ -10,9 +10,6 @@ import torch
 import torch.distributed as dist
 from mmcv.runner import get_dist_info
 
-from ..dense_heads.occ_head_plugin import IntersectionOverUnion, PanopticMetric
-from ..dense_heads.planning_head_plugin import PlanningMetric
-
 import mmcv
 import numpy as np
 import pycocotools.mask as mask_util
@@ -59,22 +56,24 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
     eval_occ = hasattr(model.module, 'with_occ_head') \
                 and model.module.with_occ_head
     if eval_occ:
+        from ..dense_heads.occ_head_plugin import IntersectionOverUnion, PanopticMetric
         # 30mx30m, 100mx100m at 50cm resolution
         EVALUATION_RANGES = {'30x30': (70, 130),
                             '100x100': (0, 200)}
         n_classes = 2
         iou_metrics = {}
         for key in EVALUATION_RANGES.keys():
-            iou_metrics[key] = IntersectionOverUnion(n_classes).cuda()
+            iou_metrics[key] = IntersectionOverUnion(n_classes).musa()
         panoptic_metrics = {}
         for key in EVALUATION_RANGES.keys():
-            panoptic_metrics[key] = PanopticMetric(n_classes=n_classes, temporally_consistent=True).cuda()
+            panoptic_metrics[key] = PanopticMetric(n_classes=n_classes, temporally_consistent=True).musa()
     
     # Plan eval init
     eval_planning =  hasattr(model.module, 'with_planning_head') \
                       and model.module.with_planning_head
     if eval_planning:
-        planning_metrics = PlanningMetric().cuda()
+        from ..dense_heads.planning_head_plugin import PlanningMetric
+        planning_metrics = PlanningMetric().musa()
         
     bbox_results = []
     mask_results = []
@@ -197,12 +196,12 @@ def collect_results_cpu(result_part, size, tmpdir=None):
         dir_tensor = torch.full((MAX_LEN, ),
                                 32,
                                 dtype=torch.uint8,
-                                device='cuda')
+                                device='musa')
         if rank == 0:
             mmcv.mkdir_or_exist('.dist_test')
             tmpdir = tempfile.mkdtemp(dir='.dist_test')
             tmpdir = torch.tensor(
-                bytearray(tmpdir.encode()), dtype=torch.uint8, device='cuda')
+                bytearray(tmpdir.encode()), dtype=torch.uint8, device='musa')
             dir_tensor[:len(tmpdir)] = tmpdir
         dist.broadcast(dir_tensor, 0)
         tmpdir = dir_tensor.cpu().numpy().tobytes().decode().rstrip()

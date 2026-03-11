@@ -1,6 +1,7 @@
 import itertools
 from typing import Any, Dict, List, Tuple, Union
 import torch
+import numpy as np
 
 
 class Instances:
@@ -144,7 +145,30 @@ class Instances:
                 ret.set(k, ret_list)
 
             else:
-                ret.set(k, v[item])
+                index = item
+                if isinstance(item, torch.Tensor):
+                    if torch.is_tensor(v):
+                        # Keep tensor indexing on the same device as target tensor.
+                        index = item.to(device=v.device)
+                    elif isinstance(v, list):
+                        cpu_idx = item.detach().to('cpu')
+                        if cpu_idx.dtype == torch.bool:
+                            picked = [obj for obj, keep in zip(v, cpu_idx.tolist()) if keep]
+                        else:
+                            idx_list = cpu_idx.tolist()
+                            if not isinstance(idx_list, list):
+                                idx_list = [idx_list]
+                            picked = [v[i] for i in idx_list]
+                        ret.set(k, picked)
+                        continue
+                    else:
+                        # numpy / other CPU-backed containers cannot consume device tensors.
+                        cpu_idx = item.detach().to('cpu')
+                        if cpu_idx.dtype == torch.bool:
+                            index = cpu_idx.numpy().astype(np.bool_)
+                        else:
+                            index = cpu_idx.numpy()
+                ret.set(k, v[index])
         return ret
 
     def __len__(self) -> int:

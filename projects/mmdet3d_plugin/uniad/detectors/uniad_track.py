@@ -72,14 +72,22 @@ class UniADTrack(MVXTwoStageDetector):
         freeze_bev_encoder=False,
         queue_length=3,
     ):
-        super(UniADTrack, self).__init__(
+        base_kwargs = dict(
             img_backbone=img_backbone,
             img_neck=img_neck,
             pts_bbox_head=pts_bbox_head,
             train_cfg=train_cfg,
             test_cfg=test_cfg,
-            pretrained=pretrained,
         )
+        if pretrained is not None:
+            base_kwargs['pretrained'] = pretrained
+        try:
+            super(UniADTrack, self).__init__(**base_kwargs)
+        except TypeError as exc:
+            if 'pretrained' not in str(exc):
+                raise
+            base_kwargs.pop('pretrained', None)
+            super(UniADTrack, self).__init__(**base_kwargs)
 
         self.grid_mask = GridMask(
             True, True, rotate=1, offset=False, ratio=0.5, mode=1, prob=0.7
@@ -154,6 +162,23 @@ class UniADTrack(MVXTwoStageDetector):
         """Extract features of images."""
         if img is None:
             return None
+        if isinstance(img, (list, tuple)):
+            cam_tensors = []
+            for cam in img:
+                if not torch.is_tensor(cam):
+                    continue
+                # Legacy test pipeline may output [B, H, W, C] per camera.
+                if cam.dim() == 4 and cam.shape[-1] in (1, 3):
+                    cam = cam.permute(0, 3, 1, 2).contiguous()
+                elif cam.dim() == 3 and cam.shape[-1] in (1, 3):
+                    cam = cam.permute(2, 0, 1).unsqueeze(0).contiguous()
+                cam_tensors.append(cam)
+            if cam_tensors:
+                img = torch.stack(cam_tensors, dim=1)
+            else:
+                return None
+        elif torch.is_tensor(img) and img.dim() == 4 and img.shape[-1] in (1, 3):
+            img = img.permute(0, 3, 1, 2).unsqueeze(1).contiguous()
         assert img.dim() == 5
         B, N, C, H, W = img.size()
         img = img.reshape(B * N, C, H, W)
@@ -846,4 +871,3 @@ class UniADTrack(MVXTwoStageDetector):
             result_dict = None
 
         return [result_dict]
-

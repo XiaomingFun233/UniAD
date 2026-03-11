@@ -6,10 +6,14 @@
 
 import torch
 import torch.nn as nn
+import warnings
 from mmdet.models.builder import HEADS, build_loss
 from einops import rearrange
 from projects.mmdet3d_plugin.models.utils.functional import bivariate_gaussian_activation
-from .planning_head_plugin import CollisionNonlinearOptimizer
+try:
+    from .planning_head_plugin import CollisionNonlinearOptimizer
+except Exception:
+    CollisionNonlinearOptimizer = None
 import numpy as np
 import copy
 
@@ -76,6 +80,9 @@ class PlanningHeadSingleMode(nn.Module):
         self.loss_collision = nn.ModuleList(self.loss_collision)
         
         self.use_col_optim = use_col_optim
+        if self.use_col_optim and CollisionNonlinearOptimizer is None:
+            warnings.warn('CollisionNonlinearOptimizer is unavailable, disable use_col_optim.')
+            self.use_col_optim = False
         self.occ_filter_range = col_optim_args['occ_filter_range']
         self.sigma = col_optim_args['sigma']
         self.alpha_collision = col_optim_args['alpha_collision']

@@ -19,6 +19,10 @@ from mmdet.core import (bbox_cxcywh_to_xyxy, bbox_xyxy_to_cxcywh,
                         reduce_mean)
 from mmdet.models.utils import build_transformer
 from .seg_head_plugin import SegDETRHead, IOU
+try:
+    from mmengine.structures import InstanceData
+except ImportError:
+    InstanceData = None
 
 @HEADS.register_module()
 class PansegformerHead(SegDETRHead):
@@ -459,8 +463,17 @@ class PansegformerHead(SegDETRHead):
         pos_ind_mask, neg_ind_mask, assign_result = self.assigner_filter.assign(
             bbox_pred, cls_score, gt_bboxes, gt_labels, img_meta,
             gt_bboxes_ignore)
-        sampling_result = self.sampler.sample(assign_result, bbox_pred,
-                                              gt_bboxes)
+        try:
+            sampling_result = self.sampler.sample(assign_result, bbox_pred, gt_bboxes)
+        except (TypeError, AttributeError):
+            if InstanceData is None:
+                raise
+            img_h, img_w = img_meta['img_shape'][:2]
+            factor = bbox_pred.new_tensor([img_w, img_h, img_w, img_h]).unsqueeze(0)
+            pred_bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
+            pred_instances = InstanceData(bboxes=pred_bboxes, priors=pred_bboxes, scores=cls_score)
+            gt_instances = InstanceData(bboxes=gt_bboxes, labels=gt_labels)
+            sampling_result = self.sampler.sample(assign_result, pred_instances, gt_instances)
         pos_inds = sampling_result.pos_inds
         neg_inds = sampling_result.neg_inds
         # label targets
@@ -773,18 +786,16 @@ class PansegformerHead(SegDETRHead):
                 query_things = query_inter_things[j]
                 t1, t2, t3 = query_things.shape
                 tmp = self.reg_branches2[j](query_things.reshape(t1 * t2, t3)).reshape(t1, t2, 4)
-                if len(pos_ind) == 0:
-                    tmp = tmp.sum(
-                    ) + reference_i  # for reply bug of pytorch broadcast
-                elif reference_i.shape[-1] == 4:
-                    tmp += reference_i
-                else:
-                    assert reference_i.shape[-1] == 2
-                    tmp[..., :2] += reference_i
+                if len(pos_ind) > 0:
+                    if reference_i.shape[-1] == 4:
+                        tmp += reference_i
+                    else:
+                        assert reference_i.shape[-1] == 2
+                        tmp[..., :2] += reference_i
 
                 outputs_coord = tmp.sigmoid()
-
-                new_bbox_preds[j][i][:len(pos_inds_mask_list[i])] = outputs_coord
+                outputs_coord_i = outputs_coord[i] if outputs_coord.dim() == 3 else outputs_coord
+                new_bbox_preds[j][i][:len(pos_inds_mask_list[i])] = outputs_coord_i[:len(pos_inds_mask_list[i])]
                 cls_thing_preds[j].append(self.cls_thing_branches[j](
                     query_things.reshape(t1 * t2, t3)))
 
@@ -1022,17 +1033,31 @@ class PansegformerHead(SegDETRHead):
 
         with torch.no_grad():
             drivable_pred = results[0]['drivable']
-            drivable_gt = gt_lane_masks[0][0, -1]
+            lane_masks = gt_lane_masks[0]
+            if isinstance(lane_masks, (list, tuple)):
+                lane_masks = lane_masks[0]
+            while hasattr(lane_masks, 'dim') and lane_masks.dim() > 3:
+                lane_masks = lane_masks[0]
+            if lane_masks.dim() == 2:
+                lane_masks = lane_masks.unsqueeze(0)
+
+            lane_labels = gt_lane_labels[0]
+            if isinstance(lane_labels, (list, tuple)):
+                lane_labels = lane_labels[0]
+            while hasattr(lane_labels, 'dim') and lane_labels.dim() > 1:
+                lane_labels = lane_labels[0]
+
+            drivable_gt = lane_masks[-1]
             drivable_iou, drivable_intersection, drivable_union = IOU(drivable_pred.view(1, -1), drivable_gt.view(1, -1))
 
             lane_pred = results[0]['lane']
             lanes_pred = (results[0]['lane'].sum(0) > 0).int()
-            lanes_gt = (gt_lane_masks[0][0][:-1].sum(0) > 0).int()
+            lanes_gt = (lane_masks[:-1].sum(0) > 0).int()
             lanes_iou, lanes_intersection, lanes_union = IOU(lanes_pred.view(1, -1), lanes_gt.view(1, -1))
 
-            divider_gt = (gt_lane_masks[0][0][gt_lane_labels[0][0] == 0].sum(0) > 0).int()
-            crossing_gt = (gt_lane_masks[0][0][gt_lane_labels[0][0] == 1].sum(0) > 0).int()
-            contour_gt = (gt_lane_masks[0][0][gt_lane_labels[0][0] == 2].sum(0) > 0).int()
+            divider_gt = (lane_masks[lane_labels == 0].sum(0) > 0).int()
+            crossing_gt = (lane_masks[lane_labels == 1].sum(0) > 0).int()
+            contour_gt = (lane_masks[lane_labels == 2].sum(0) > 0).int()
             divider_iou, divider_intersection, divider_union = IOU(lane_pred[0].view(1, -1), divider_gt.view(1, -1))
             crossing_iou, crossing_intersection, crossing_union = IOU(lane_pred[1].view(1, -1), crossing_gt.view(1, -1))
             contour_iou, contour_intersection, contour_union = IOU(lane_pred[2].view(1, -1), contour_gt.view(1, -1))

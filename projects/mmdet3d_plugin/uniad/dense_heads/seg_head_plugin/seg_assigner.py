@@ -17,6 +17,10 @@ from mmdet.core import mask
 import torch
 
 from mmdet.utils import util_mixins
+try:
+    from mmengine.structures import InstanceData
+except ImportError:
+    InstanceData = None
 
 
 INF = 10000000
@@ -254,13 +258,34 @@ class HungarianAssigner_filter(BaseAssigner):
         # 2. compute the weighted costs
         # classification and bboxcost.
         
-        cls_cost = self.cls_cost(cls_pred, gt_labels)
-        # regression L1 cost
-        normalize_gt_bboxes = gt_bboxes / factor
-        reg_cost = self.reg_cost(bbox_pred, normalize_gt_bboxes)
-        # regression iou cost, defaultly giou is used in official DETR.
-        bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
-        iou_cost = self.iou_cost(bboxes, gt_bboxes)
+        try:
+            cls_cost = self.cls_cost(cls_pred, gt_labels)
+            # regression L1 cost
+            normalize_gt_bboxes = gt_bboxes / factor
+            reg_cost = self.reg_cost(bbox_pred, normalize_gt_bboxes)
+            # regression iou cost, defaultly giou is used in official DETR.
+            bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
+            iou_cost = self.iou_cost(bboxes, gt_bboxes)
+        except (TypeError, AttributeError):
+            if InstanceData is None:
+                raise
+            pred_bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
+            pred_instances = InstanceData(scores=cls_pred, bboxes=pred_bboxes)
+            gt_instances = InstanceData(labels=gt_labels, bboxes=gt_bboxes)
+            compat_meta = dict(img_meta)
+            compat_meta['img_shape'] = (img_h, img_w)
+            cls_cost = self.cls_cost(
+                pred_instances=pred_instances,
+                gt_instances=gt_instances,
+                img_meta=compat_meta)
+            reg_cost = self.reg_cost(
+                pred_instances=pred_instances,
+                gt_instances=gt_instances,
+                img_meta=compat_meta)
+            iou_cost = self.iou_cost(
+                pred_instances=pred_instances,
+                gt_instances=gt_instances,
+                img_meta=compat_meta)
         # weighted sum of above three cost
         
         cost = cls_cost + reg_cost + iou_cost 
@@ -413,16 +438,37 @@ class HungarianAssigner_multi_info(BaseAssigner):
         factor = bbox_pred.new_tensor([img_w, img_h, img_w,img_h]).unsqueeze(0)
 
       
-        # classification and bboxcost.
-        cls_cost = self.cls_cost(cls_pred, gt_labels)
-        # regression L1 cost
-        normalize_gt_bboxes = gt_bboxes / factor
-        reg_cost = self.reg_cost(bbox_pred, normalize_gt_bboxes)
-        # regression iou cost, defaultly giou is used in official DETR.
-        bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
-        iou_cost = self.iou_cost(bboxes, gt_bboxes)
-        # weighted sum of above three costs
-        mask_cost = self.mask_cost(mask_pred,gt_mask)
+        try:
+            # classification and bboxcost.
+            cls_cost = self.cls_cost(cls_pred, gt_labels)
+            # regression L1 cost
+            normalize_gt_bboxes = gt_bboxes / factor
+            reg_cost = self.reg_cost(bbox_pred, normalize_gt_bboxes)
+            # regression iou cost, defaultly giou is used in official DETR.
+            bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
+            iou_cost = self.iou_cost(bboxes, gt_bboxes)
+            # weighted sum of above three costs
+            mask_cost = self.mask_cost(mask_pred, gt_mask)
+        except (TypeError, AttributeError):
+            if InstanceData is None:
+                raise
+            pred_bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
+            pred_instances = InstanceData(
+                scores=cls_pred,
+                bboxes=pred_bboxes,
+                masks=mask_pred,
+            )
+            gt_instances = InstanceData(
+                labels=gt_labels,
+                bboxes=gt_bboxes,
+                masks=gt_mask,
+            )
+            compat_meta = dict(img_meta)
+            compat_meta['img_shape'] = (img_h, img_w)
+            cls_cost = self.cls_cost(pred_instances, gt_instances, compat_meta)
+            reg_cost = self.reg_cost(pred_instances, gt_instances, compat_meta)
+            iou_cost = self.iou_cost(pred_instances, gt_instances, compat_meta)
+            mask_cost = self.mask_cost(mask_pred, gt_mask)
         #
         cost = cls_cost + reg_cost + iou_cost + mask_cost
 

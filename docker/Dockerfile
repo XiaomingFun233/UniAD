@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.1.1-cudnn8-devel-ubuntu20.04
+FROM nvidia/musa:11.1.1-cudnn8-devel-ubuntu20.04
 
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -10,7 +10,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES ${NVIDIA_DRIVER_CAPABILITIES},compute,display
 SHELL [ "/bin/bash", "--login", "-c" ]
 
 # To fix GPG key error when running apt-get update
-RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/musa/repos/ubuntu1804/x86_64/3bf863cc.pub
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
 
 #install libs first
@@ -29,7 +29,7 @@ RUN apt-get update -q && \
 # intall pytorch
 ENV TORCH_CUDA_ARCH_LIST="6.0 6.1 7.0 7.5 8.0+PTX"
 ENV TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
-ENV PATH=${PATH}:/usr/local/cuda:/usr/local/cuda/bin
+ENV PATH=${PATH}:/usr/local/musa:/usr/local/musa/bin
 RUN pip install torch==1.9.1+cu111 torchvision==0.10.1+cu111 torchaudio==0.9.1 -f https://download.pytorch.org/whl/torch_stable.html
 
 RUN pip uninstall numpy scikit-image pandas matplotlib shapely setuptools urllib3 -y
@@ -38,7 +38,7 @@ RUN pip install scikit-learn pyquaternion cachetools descartes future tensorboar
 RUN pip install IPython
 
 # Install MMCV-series
-ENV CUDA_HOME=/usr/local/cuda
+ENV CUDA_HOME=/usr/local/musa
 ENV FORCE_CUDA="1"
 
 RUN pip install mmcv-full==1.4.0 -f https://download.openmmlab.com/mmcv/dist/cu111/torch1.9.0/index.html

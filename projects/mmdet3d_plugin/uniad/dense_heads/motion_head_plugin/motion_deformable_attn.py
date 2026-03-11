@@ -451,7 +451,7 @@ class MotionDeformableAttention(BaseModule):
             raise ValueError(
                 f'Last dim of reference_trajs must be'
                 f' 2 or 4, but get {reference_trajs.shape[-1]} instead.')
-        if torch.cuda.is_available() and value.is_cuda:
+        if torch.musa.is_available() and value.is_musa:
 
             # using fp16 deformable attention is unstable because it performs many sum operations
             if value.dtype == torch.float16:

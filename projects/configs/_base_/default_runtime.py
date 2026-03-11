@@ -1,3 +1,5 @@
+import os
+
 checkpoint_config = dict(interval=1)
 # yapf:disable push
 # By default we use textlogger hook and tensorboard
@@ -10,7 +12,7 @@ log_config = dict(
         dict(type='TensorboardLoggerHook')
     ])
 # yapf:enable
-dist_params = dict(backend='nccl')
+dist_params = dict(backend=os.getenv('UNIAD_DIST_BACKEND', 'mccl'))
 log_level = 'INFO'
 work_dir = None
 load_from = None

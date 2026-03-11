@@ -1,12 +1,19 @@
-from .core.bbox.assigners.hungarian_assigner_3d import HungarianAssigner3D
-from .core.bbox.coders.nms_free_coder import NMSFreeCoder
-from .core.bbox.match_costs import BBox3DL1Cost, DiceCost
-from .core.evaluation.eval_hooks import CustomDistEvalHook
-from .datasets.pipelines import (
-  PhotoMetricDistortionMultiViewImage, PadMultiViewImage, 
-  NormalizeMultiviewImage,  CustomCollect3D)
-from .models.backbones.vovnet import VoVNet
-from .models.utils import *
-from .models.opt.adamw import AdamW2
-from .uniad import *
-from .losses import *
+import importlib
+import warnings
+
+
+def _safe_import(module_name):
+    try:
+        importlib.import_module(module_name)
+    except Exception as e:
+        warnings.warn(f"Skip optional import {module_name}: {e}")
+
+
+_safe_import('projects.mmdet3d_plugin.core.bbox.assigners.hungarian_assigner_3d')
+_safe_import('projects.mmdet3d_plugin.core.bbox.coders.nms_free_coder')
+_safe_import('projects.mmdet3d_plugin.core.bbox.match_costs')
+_safe_import('projects.mmdet3d_plugin.datasets.pipelines')
+_safe_import('projects.mmdet3d_plugin.models.backbones.vovnet')
+_safe_import('projects.mmdet3d_plugin.models.opt.adamw')
+_safe_import('projects.mmdet3d_plugin.uniad')
+_safe_import('projects.mmdet3d_plugin.losses')

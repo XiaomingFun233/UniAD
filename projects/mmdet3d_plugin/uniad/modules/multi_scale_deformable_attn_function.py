@@ -5,7 +5,22 @@
 # ---------------------------------------------
 
 import torch
-from torch.cuda.amp import custom_bwd, custom_fwd
+try:
+    from torch.musa.amp import custom_bwd, custom_fwd
+except Exception:
+    try:
+        from torch.cuda.amp import custom_bwd, custom_fwd
+    except Exception:
+        # Fallback no-op decorators for environments without AMP custom hooks.
+        def custom_fwd(*args, **kwargs):
+            def _wrap(func):
+                return func
+            return _wrap
+
+        def custom_bwd(*args, **kwargs):
+            def _wrap(func):
+                return func
+            return _wrap
 from torch.autograd.function import Function, once_differentiable
 from mmcv.utils import ext_loader
 ext_module = ext_loader.load_ext(

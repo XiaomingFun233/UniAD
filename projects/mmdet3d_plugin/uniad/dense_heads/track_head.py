@@ -6,6 +6,7 @@
 #---------------------------------------------------------------------------------#
 
 import copy
+import inspect
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,9 +17,11 @@ from mmdet.core import (multi_apply, multi_apply, reduce_mean)
 from mmdet.models.utils.transformer import inverse_sigmoid
 from mmdet.models import HEADS
 from mmdet.models.dense_heads import DETRHead
+from mmdet.models.utils import build_transformer
 from mmdet3d.core.bbox.coders import build_bbox_coder
 from projects.mmdet3d_plugin.core.bbox.util import normalize_bbox
 from mmcv.runner import force_fp32, auto_fp16
+from mmcv.cnn.bricks.transformer import build_positional_encoding
 
 
 @HEADS.register_module()
@@ -75,8 +78,30 @@ class BEVFormerTrackHead(DETRHead):
         self.num_cls_fcs = num_cls_fcs - 1
         self.past_steps = past_steps
         self.fut_steps = fut_steps
-        super(BEVFormerTrackHead, self).__init__(
-            *args, transformer=transformer, **kwargs)
+        try:
+            super(BEVFormerTrackHead, self).__init__(
+                *args, transformer=transformer, **kwargs)
+        except TypeError as exc:
+            if 'transformer' not in str(exc):
+                raise
+            positional_encoding = kwargs.pop('positional_encoding', None)
+            self.num_query = kwargs.pop('num_query', 100)
+            transformer_module = build_transformer(transformer)
+            object.__setattr__(self, 'transformer', transformer_module)
+            if positional_encoding is not None:
+                positional_encoding_module = build_positional_encoding(
+                    positional_encoding)
+                object.__setattr__(
+                    self, 'positional_encoding', positional_encoding_module)
+            allowed = set(inspect.signature(DETRHead.__init__).parameters.keys())
+            allowed.discard('self')
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed}
+            if 'embed_dims' not in filtered_kwargs and 'in_channels' in kwargs:
+                filtered_kwargs['embed_dims'] = kwargs['in_channels']
+            super(BEVFormerTrackHead, self).__init__(*args, **filtered_kwargs)
+            self.transformer = transformer_module
+            if positional_encoding is not None:
+                self.positional_encoding = positional_encoding_module
         self.code_weights = nn.Parameter(torch.tensor(
             self.code_weights, requires_grad=False), requires_grad=False)
 

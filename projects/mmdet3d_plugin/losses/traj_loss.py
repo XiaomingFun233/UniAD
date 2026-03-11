@@ -12,6 +12,42 @@ from typing import Tuple
 
 from mmdet.models import LOSSES
 
+
+def _reduce_with_indices(x: torch.Tensor, dim: int, reduce: str = 'min'):
+    """Fallback reduction for backends that may fail on reduce-with-indices kernels."""
+    fn = torch.min if reduce == 'min' else torch.max
+    try:
+        return fn(x, dim=dim)
+    except RuntimeError:
+        # Fallback to CPU reduction to avoid backend-specific kernel issues.
+        x_cpu = x.detach().cpu()
+        val_cpu, idx_cpu = fn(x_cpu, dim=dim)
+        return val_cpu.to(x.device), idx_cpu.to(x.device)
+
+
+def _argmin_from_values(x: torch.Tensor, min_vals: torch.Tensor, dim: int) -> torch.Tensor:
+    """Build argmin indices without invoking reduce-with-indices kernels."""
+    if dim < 0:
+        dim = x.dim() + dim
+    # Move target dim to axis 1 for simple indexing logic.
+    if dim != 1:
+        perm = list(range(x.dim()))
+        perm[1], perm[dim] = perm[dim], perm[1]
+        x_work = x.permute(perm)
+    else:
+        x_work = x
+    eps = torch.tensor(1e-12, dtype=min_vals.dtype, device=min_vals.device)
+    cmp = x_work <= (min_vals.unsqueeze(1) + eps)
+    first = cmp & (cmp.to(torch.int32).cumsum(dim=1) == 1)
+    ar = torch.arange(x_work.size(1), device=x_work.device, dtype=torch.long).view(
+        1, -1, *([1] * (x_work.dim() - 2)))
+    inds = (first.to(torch.long) * ar).sum(dim=1)
+    if inds.dim() > 1:
+        # this file only uses 2D reductions; keep behavior explicit
+        inds = inds.reshape(inds.size(0), -1)[:, 0]
+    return inds
+
+
 @LOSSES.register_module()
 class TrajLoss(nn.Module):
     """
@@ -107,6 +143,9 @@ def min_ade(traj: torch.Tensor, traj_gt: torch.Tensor,
     :return errs, inds: errors and indices for modes with min error, shape
     [batch_size]
     """
+    traj = traj.float()
+    traj_gt = traj_gt.float()
+    masks = masks.float()
     num_modes = traj.shape[1]
     traj_gt_rpt = traj_gt.unsqueeze(1).repeat(1, num_modes, 1, 1)
     masks_rpt = masks.unsqueeze(1).repeat(1, num_modes, 1)
@@ -116,9 +155,9 @@ def min_ade(traj: torch.Tensor, traj_gt: torch.Tensor,
     err = torch.pow(err, exponent=0.5)
     err = torch.sum(err * (1 - masks_rpt), dim=2) / \
         torch.clip(torch.sum((1 - masks_rpt), dim=2), min=1)
-    err, inds = torch.min(err, dim=1)
-
-    return err, inds
+    min_vals = torch.amin(err, dim=1)
+    inds = _argmin_from_values(err, min_vals, dim=1)
+    return min_vals, inds
 
 def traj_nll(
         pred_dist: torch.Tensor,
@@ -138,14 +177,18 @@ def traj_nll(
     shape [batch_size, sequence_length]
     :return:
     """
+    pred_dist = pred_dist.float()
+    traj_gt = traj_gt.float()
+    masks = masks.float()
+
     mu_x = pred_dist[:, :, 0]
     mu_y = pred_dist[:, :, 1]
     x = traj_gt[:, :, 0]
     y = traj_gt[:, :, 1]
 
-    sig_x = pred_dist[:, :, 2]
-    sig_y = pred_dist[:, :, 3]
-    rho = pred_dist[:, :, 4]
+    sig_x = torch.clamp(pred_dist[:, :, 2], min=1e-4)
+    sig_y = torch.clamp(pred_dist[:, :, 3], min=1e-4)
+    rho = torch.clamp(pred_dist[:, :, 4], min=-0.999, max=0.999)
     ohr = torch.pow(1 - torch.pow(rho, 2), -0.5)
 
     nll = 0.5 * torch.pow(ohr, 2) * \
@@ -154,10 +197,16 @@ def traj_nll(
          torch.pow(sig_y, 1) * (x - mu_x) * (y - mu_y)) - \
         torch.log(sig_x * sig_y * ohr) + 1.8379
 
-    nll[nll.isnan()] = 0
-    nll[nll.isinf()] = 0
-
-    nll = torch.sum(nll * (1 - masks), dim=1) / (torch.sum((1 - masks), dim=1) + 1e-5)
+    nll = torch.nan_to_num(nll, nan=0.0, posinf=0.0, neginf=0.0)
+    valid = (1 - masks)
+    try:
+        nll = torch.sum(nll * valid, dim=1) / (torch.sum(valid, dim=1) + 1e-5)
+    except RuntimeError:
+        # Backend fallback for unstable map/reduce kernels
+        nll_cpu = nll.detach().cpu()
+        valid_cpu = valid.detach().cpu()
+        nll = (torch.sum(nll_cpu * valid_cpu, dim=1) /
+               (torch.sum(valid_cpu, dim=1) + 1e-5)).to(pred_dist.device)
     # Note: Normalizing with torch.sum((1 - masks), dim=1) makes values
     # somewhat comparable for trajectories of
     # different lengths
@@ -177,12 +226,19 @@ def min_fde(traj: torch.Tensor, traj_gt: torch.Tensor,
     :return errs, inds: errors and indices for modes with min error,
     shape [batch_size]
     """
+    traj = traj.float()
+    traj_gt = traj_gt.float()
+    masks = masks.float()
     num_modes = traj.shape[1]
     lengths = torch.sum(1 - masks, dim=1).long()
     valid_mask = lengths > 0
     traj = traj[valid_mask]
     traj_gt = traj_gt[valid_mask]
     masks = masks[valid_mask]
+    if traj.shape[0] == 0:
+        empty_err = torch.zeros((0,), device=traj_gt.device, dtype=traj_gt.dtype)
+        empty_inds = torch.zeros((0,), device=traj_gt.device, dtype=torch.long)
+        return empty_err, empty_inds
     traj_gt_rpt = traj_gt.unsqueeze(1).repeat(1, num_modes, 1, 1)
     lengths = torch.sum(1 - masks, dim=1).long()
     inds = lengths.unsqueeze(1).unsqueeze(
@@ -195,9 +251,9 @@ def min_fde(traj: torch.Tensor, traj_gt: torch.Tensor,
     err = torch.pow(err, exponent=2)
     err = torch.sum(err, dim=2)
     err = torch.pow(err, exponent=0.5)
-    err, inds = torch.min(err, dim=1)
-
-    return err, inds
+    min_vals = torch.amin(err, dim=1)
+    inds = _argmin_from_values(err, min_vals, dim=1)
+    return min_vals, inds
 
 
 def miss_rate(
@@ -217,6 +273,9 @@ def miss_rate(
     :return errs, inds: errors and indices for modes with min error,
     shape [batch_size]
     """
+    traj = traj.float()
+    traj_gt = traj_gt.float()
+    masks = masks.float()
     num_modes = traj.shape[1]
 
     traj_gt_rpt = traj_gt.unsqueeze(1).repeat(1, num_modes, 1, 1)
@@ -226,8 +285,10 @@ def miss_rate(
     dist = torch.sum(dist, dim=3)
     dist = torch.pow(dist, exponent=0.5)
     dist[masks_rpt.bool()] = -math.inf
-    dist, _ = torch.max(dist, dim=2)
-    dist, _ = torch.min(dist, dim=1)
+    dist = torch.amax(dist, dim=2)
+    if dist.shape[0] == 0:
+        return torch.tensor(0.0, device=traj.device, dtype=traj.dtype)
+    dist = torch.amin(dist, dim=1)
     m_r = torch.sum(torch.as_tensor(dist > dist_thresh)) / len(dist)
 
     return m_r

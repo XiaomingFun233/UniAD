@@ -8,8 +8,6 @@ from mmcv.runner import get_dist_info
 from torch.utils.data import Sampler
 from .sampler import SAMPLER
 import random
-from IPython import embed
-
 
 @SAMPLER.register_module()
 class DistributedGroupSampler(Sampler):
@@ -48,8 +46,11 @@ class DistributedGroupSampler(Sampler):
         self.epoch = 0
         self.seed = seed if seed is not None else 0
 
-        assert hasattr(self.dataset, 'flag')
-        self.flag = self.dataset.flag
+        if hasattr(self.dataset, 'flag'):
+            self.flag = self.dataset.flag
+        else:
+            # MMEngine BaseDataset may not provide "flag"; treat all samples as one group.
+            self.flag = np.zeros(len(self.dataset), dtype=np.int64)
         self.group_sizes = np.bincount(self.flag)
 
         self.num_samples = 0
@@ -105,4 +106,3 @@ class DistributedGroupSampler(Sampler):
 
     def set_epoch(self, epoch):
         self.epoch = epoch
-

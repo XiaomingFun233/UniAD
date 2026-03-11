@@ -7,7 +7,10 @@
 import torch
 import random
 import numpy as np
-from .motion_optimization import MotionNonlinearSmoother
+try:
+    from .motion_optimization import MotionNonlinearSmoother
+except Exception:
+    MotionNonlinearSmoother = None
 
 
 def nonlinear_smoother(gt_bboxes_3d, gt_fut_traj, gt_fut_traj_mask, bbox_tensor):
@@ -76,7 +79,9 @@ def nonlinear_smoother(gt_bboxes_3d, gt_fut_traj, gt_fut_traj_mask, bbox_tensor)
                   yaw_preds[i], speed_preds[i]]
         reference_trajectory = np.concatenate(
             [gt_fut_traj[i], gt_fut_traj_yaw[i]], axis=-1)
-        if ts > 1 and _is_dynamic(gt_fut_traj[i], int(ts), 2) and _check_diff(x_curr, reference_trajectory):
+        if (MotionNonlinearSmoother is not None and ts > 1 and
+                _is_dynamic(gt_fut_traj[i], int(ts), 2) and
+                _check_diff(x_curr, reference_trajectory)):
             smoother = MotionNonlinearSmoother(
                 trajectory_len=int(ts), dt=0.5)
             reference_trajectory = reference_trajectory[:int(ts)+1, :]

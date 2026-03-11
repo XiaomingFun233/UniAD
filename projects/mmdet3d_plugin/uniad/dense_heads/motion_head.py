@@ -115,6 +115,12 @@ class MotionHead(BaseMotionHead):
         """
         track_query = outs_track['track_query_embeddings'][None, None, ...] # num_dec, B, A_track, D
         all_matched_idxes = [outs_track['track_query_matched_idxes']] #BxN
+        if not torch.is_tensor(all_matched_idxes[0]):
+            all_matched_idxes[0] = torch.as_tensor(
+                all_matched_idxes[0], device=track_query.device, dtype=torch.long)
+        else:
+            all_matched_idxes[0] = all_matched_idxes[0].to(
+                device=track_query.device, dtype=torch.long)
         track_boxes = outs_track['track_bbox_results']
         
         # cat sdc query/gt to the last
@@ -137,7 +143,19 @@ class MotionHead(BaseMotionHead):
         losses = self.loss(*loss_inputs)
 
         def filter_vehicle_query(outs_motion, all_matched_idxes, gt_labels_3d, vehicle_id_list):
-            query_label = gt_labels_3d[0][-1][all_matched_idxes[0]]
+            matched_idx = all_matched_idxes[0]
+            if not torch.is_tensor(matched_idx):
+                matched_idx = torch.as_tensor(
+                    matched_idx, device=track_query.device, dtype=torch.long)
+            else:
+                matched_idx = matched_idx.to(device=track_query.device, dtype=torch.long)
+            label_src = gt_labels_3d[0][-1]
+            if not torch.is_tensor(label_src):
+                label_src = torch.as_tensor(
+                    label_src, device=matched_idx.device, dtype=torch.long)
+            else:
+                label_src = label_src.to(device=matched_idx.device, dtype=torch.long)
+            query_label = label_src[matched_idx]
             # select vehicle query according to vehicle_id_list
             vehicle_mask = torch.zeros_like(query_label)
             for veh_id in vehicle_id_list:
@@ -145,7 +163,7 @@ class MotionHead(BaseMotionHead):
             outs_motion['traj_query'] = outs_motion['traj_query'][:, :, vehicle_mask>0]
             outs_motion['track_query'] = outs_motion['track_query'][:, vehicle_mask>0]
             outs_motion['track_query_pos'] = outs_motion['track_query_pos'][:, vehicle_mask>0]
-            all_matched_idxes[0] = all_matched_idxes[0][vehicle_mask>0]
+            all_matched_idxes[0] = matched_idx[vehicle_mask>0]
             return outs_motion, all_matched_idxes
 
         all_matched_idxes[0] = all_matched_idxes[0][:-1]

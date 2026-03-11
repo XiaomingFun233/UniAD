@@ -363,6 +363,9 @@ class SegDeformableTransformer(Transformer):
         query = query.permute(1, 0, 2)
         memory = memory.permute(1, 0, 2)
         query_pos = query_pos.permute(1, 0, 2)
+        if reference_points.dim() == 3 and reference_points.size(-1) == 2:
+            reference_points = reference_points[:, :, None, :] * \
+                valid_ratios[:, None, :, :]
         inter_states, inter_references = self.decoder(
             query=query,
             key=None,
@@ -375,6 +378,8 @@ class SegDeformableTransformer(Transformer):
             valid_ratios=valid_ratios,
             reg_branches=reg_branches,
             **kwargs)
+        if inter_references is not None and inter_references.dim() == 5:
+            inter_references = inter_references[..., 0, :]
         inter_references_out = inter_references
         if self.as_two_stage:
             return (memory,lvl_pos_embed_flatten,mask_flatten,query_pos), inter_states, init_reference_out,\

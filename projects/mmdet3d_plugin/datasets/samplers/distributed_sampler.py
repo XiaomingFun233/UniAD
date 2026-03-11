@@ -26,6 +26,13 @@ class DistributedSampler(_DistributedSampler):
         else:
             indices = torch.arange(len(self.dataset)).tolist()
 
+        if len(indices) == 0:
+            ann_file = getattr(self.dataset, 'ann_file', '<unknown>')
+            data_root = getattr(self.dataset, 'data_root', '<unknown>')
+            raise RuntimeError(
+                f'Empty dataset in DistributedSampler (len=0). '
+                f'Please check ann_file={ann_file}, data_root={data_root}.')
+
         # add extra samples to make it evenly divisible
         # in case that indices is shorter than half of total_size
         indices = (indices *

@@ -11,6 +11,19 @@ GPUS=$3                                              #
 GPUS_PER_NODE=$(($GPUS<8?$GPUS:8))
 
 MASTER_PORT=${MASTER_PORT:-28596}
+if [ -z "${UNIAD_DIST_BACKEND}" ]; then
+    UNIAD_DIST_BACKEND=$(python - <<'PY'
+import torch
+if hasattr(torch, "musa") and torch.musa.is_available():
+    print("mccl")
+elif torch.cuda.is_available():
+    print("nccl")
+else:
+    print("gloo")
+PY
+)
+fi
+export UNIAD_DIST_BACKEND
 WORK_DIR=$(echo ${CFG%.*} | sed -e "s/configs/work_dirs/g")/
 # Intermediate files and logs will be saved to UniAD/projects/work_dirs/
 

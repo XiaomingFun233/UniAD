@@ -1,3 +1,4 @@
+import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,6 +10,10 @@ from mmdet.core import (bbox_cxcywh_to_xyxy, bbox_xyxy_to_cxcywh,
                         build_assigner, build_sampler, multi_apply,
                         reduce_mean)
 from mmdet.models.utils import build_transformer
+try:
+    from mmengine.structures import InstanceData
+except ImportError:
+    InstanceData = None
 
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
 from mmdet.models.builder import HEADS, build_loss
@@ -107,7 +112,15 @@ class SegDETRHead(
         if train_cfg:
             assert 'assigner' in train_cfg, 'assigner should be provided '\
                 'when train_cfg is set.'
-            assigner = train_cfg['assigner']
+            assigner = copy.deepcopy(train_cfg['assigner'])
+            if assigner.get('type') == 'HungarianAssigner' and \
+                    'match_costs' not in assigner:
+                match_costs = []
+                for key in ('cls_cost', 'reg_cost', 'iou_cost'):
+                    if key in assigner:
+                        match_costs.append(assigner.pop(key))
+                if match_costs:
+                    assigner['match_costs'] = match_costs
             # assert loss_cls['loss_weight'] == assigner['cls_cost']['weight'], \
             #     'The classification weight for loss and matcher should be' \
             #     'exactly the same.'
@@ -333,6 +346,10 @@ class SegDETRHead(
             num_dec_layer += 1
         return loss_dict
 
+    # mmdet>=3.0 dense heads define `loss_by_feat` as the primary interface.
+    def loss_by_feat(self, *args, **kwargs):
+        return self.loss(*args, **kwargs)
+
     def loss_single(self,
                     cls_scores,
                     bbox_preds,
@@ -517,11 +534,32 @@ class SegDETRHead(
         """
         num_bboxes = bbox_pred.size(0)
         # assigner and sampler
-        assign_result = self.assigner.assign(bbox_pred, cls_score, gt_bboxes,
-                                            gt_labels, img_meta,
-                                            gt_bboxes_ignore)
-        sampling_result = self.sampler.sample(assign_result, bbox_pred,
-                                              gt_bboxes)
+        try:
+            assign_result = self.assigner.assign(
+                bbox_pred,
+                cls_score,
+                gt_bboxes,
+                gt_labels,
+                img_meta,
+                gt_bboxes_ignore,
+            )
+            sampling_result = self.sampler.sample(assign_result, bbox_pred, gt_bboxes)
+        except TypeError:
+            if InstanceData is None:
+                raise
+            img_h, img_w = img_meta['img_shape'][:2]
+            factor = bbox_pred.new_tensor([img_w, img_h, img_w, img_h]).unsqueeze(0)
+            pred_bboxes = bbox_cxcywh_to_xyxy(bbox_pred) * factor
+            pred_instances = InstanceData(scores=cls_score, bboxes=pred_bboxes, priors=pred_bboxes)
+            gt_instances = InstanceData(labels=gt_labels, bboxes=gt_bboxes)
+            assign_img_meta = dict(img_meta)
+            assign_img_meta['img_shape'] = (img_h, img_w)
+            assign_result = self.assigner.assign(
+                pred_instances=pred_instances,
+                gt_instances=gt_instances,
+                img_meta=assign_img_meta,
+            )
+            sampling_result = self.sampler.sample(assign_result, pred_instances, gt_instances)
         pos_inds = sampling_result.pos_inds
         neg_inds = sampling_result.neg_inds
 

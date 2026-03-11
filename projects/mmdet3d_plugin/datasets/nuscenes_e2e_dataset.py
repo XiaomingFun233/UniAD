@@ -8,6 +8,7 @@ import copy
 import numpy as np
 import torch
 import mmcv
+import warnings
 from mmdet.datasets import DATASETS
 from mmdet.datasets.pipelines import to_tensor
 from mmdet3d.datasets import NuScenesDataset
@@ -16,7 +17,11 @@ from mmdet3d.core.bbox import LiDARInstance3DBoxes
 from os import path as osp
 from nuscenes.eval.common.utils import quaternion_yaw, Quaternion
 from .eval_utils.nuscenes_eval import NuScenesEval_custom
-from nuscenes.eval.tracking.evaluate import TrackingEval
+try:
+    from nuscenes.eval.tracking.evaluate import TrackingEval
+except ModuleNotFoundError as e:
+    TrackingEval = None
+    _tracking_eval_import_error = e
 from .eval_utils.nuscenes_eval_motion import MotionEval
 from nuscenes.eval.common.config import config_factory
 import tempfile
@@ -40,6 +45,25 @@ class NuScenesE2EDataset(NuScenesDataset):
 
     This dataset only add camera intrinsics and extrinsics to the results.
     """
+    ErrNameMapping = {
+        'trans_err': 'mATE',
+        'scale_err': 'mASE',
+        'orient_err': 'mAOE',
+        'vel_err': 'mAVE',
+        'attr_err': 'mAAE',
+    }
+    DefaultAttribute = {
+        'car': 'vehicle.parked',
+        'pedestrian': 'pedestrian.moving',
+        'trailer': 'vehicle.parked',
+        'truck': 'vehicle.parked',
+        'bus': 'vehicle.moving',
+        'motorcycle': 'cycle.without_rider',
+        'construction_vehicle': 'vehicle.parked',
+        'bicycle': 'cycle.without_rider',
+        'barrier': '',
+        'traffic_cone': '',
+    }
 
     def __init__(self,
                  queue_length=4,
@@ -69,13 +93,23 @@ class NuScenesE2EDataset(NuScenesDataset):
                  file_client_args=dict(backend='disk'),
                  *args, 
                  **kwargs):
+        eval_version = kwargs.pop('eval_version', None)
         # init before super init since it is called in parent class
+        self.load_interval = kwargs.get('load_interval', 1)
         self.file_client_args = file_client_args
         self.file_client = mmcv.FileClient(**file_client_args)
 
         self.is_debug = is_debug
         self.len_debug = len_debug
         super().__init__(*args, **kwargs)
+        self._sync_legacy_infos(force_if_empty=True)
+        classes = getattr(self, 'CLASSES', None)
+        if classes is None:
+            metainfo = getattr(self, 'metainfo', None) or getattr(self, '_metainfo', None) or {}
+            classes = metainfo.get('classes', ())
+        if isinstance(classes, list):
+            classes = tuple(classes)
+        self.CLASSES = classes if classes is not None else ()
         self.queue_length = queue_length
         self.overlap_test = overlap_test
         self.bev_size = bev_size
@@ -92,6 +126,16 @@ class NuScenesE2EDataset(NuScenesDataset):
 
         self.nusc = NuScenes(version=self.version,
                              dataroot=self.data_root, verbose=True)
+        self.eval_version = eval_version or getattr(self, 'eval_version', None) or 'detection_cvpr_2019'
+        try:
+            self.eval_detection_configs = config_factory(self.eval_version)
+        except Exception as exc:
+            warnings.warn(
+                f'Failed to load nuscenes eval config "{self.eval_version}", '
+                'fallback to "detection_cvpr_2019". '
+                f'Original error: {exc}')
+            self.eval_version = 'detection_cvpr_2019'
+            self.eval_detection_configs = config_factory(self.eval_version)
 
         self.map_num_classes = 3
         if canvas_size[0] == 50:
@@ -133,11 +177,80 @@ class NuScenesE2EDataset(NuScenesDataset):
         self.occ_filter_by_valid_flag = occ_filter_by_valid_flag
         self.occ_only_total_frames = 7  # NOTE: hardcode, not influenced by planning
 
+    @staticmethod
+    def _unwrap_labels(labels):
+        """Compat helper for DataContainer / Tensor / ndarray label payloads."""
+        if hasattr(labels, '_data'):
+            labels = labels._data
+        elif hasattr(labels, 'data') and not isinstance(labels, np.ndarray):
+            data = labels.data
+            if torch.is_tensor(data) or isinstance(data, np.ndarray):
+                labels = data
+        if torch.is_tensor(labels):
+            return labels
+        return np.asarray(labels)
+
+    def _label_count(self, example):
+        labels = self._unwrap_labels(example['gt_labels_3d'])
+        return int(labels.shape[0])
+
+    def _is_empty_gt_labels(self, example):
+        labels = self._unwrap_labels(example['gt_labels_3d'])
+        if torch.is_tensor(labels):
+            labels = labels.detach().cpu().numpy()
+        return not (labels != -1).any()
+
     def __len__(self):
         if not self.is_debug:
-            return len(self.data_infos)
+            infos = getattr(self, 'data_infos', None)
+            if infos is not None:
+                return len(infos)
+            return len(getattr(self, 'data_list', []))
         else:
             return self.len_debug
+
+    def _sync_legacy_infos(self, force_if_empty=False):
+        """Keep legacy UniAD infos in both new/old dataset containers."""
+        has_infos = bool(getattr(self, 'data_infos', None))
+        has_data_list = bool(getattr(self, 'data_list', None))
+        if not force_if_empty and has_infos and has_data_list:
+            return
+        legacy_infos = self.load_annotations(self.ann_file)
+        self.data_infos = legacy_infos
+        self.data_list = legacy_infos
+
+    def full_init(self):
+        """Bypass mmengine-style parsing for legacy UniAD info format."""
+        if getattr(self, '_fully_initialized', False):
+            return
+        self._sync_legacy_infos(force_if_empty=True)
+        self._fully_initialized = True
+
+    def filter_data(self):
+        """Legacy infos are pre-filtered during info generation."""
+        return getattr(self, 'data_list', [])
+
+    def pre_pipeline(self, results):
+        """Compat hook for legacy MMDet pipelines."""
+        results['img_fields'] = []
+        results['bbox3d_fields'] = []
+        results['pts_mask_fields'] = []
+        results['pts_seg_fields'] = []
+        results['bbox_fields'] = []
+        results['mask_fields'] = []
+        results['seg_fields'] = []
+        results['box_type_3d'] = self.box_type_3d
+        results['box_mode_3d'] = self.box_mode_3d
+
+    def load_data_list(self):
+        """Compat loader for legacy UniAD annotation pkl format.
+
+        mmdet3d 1.4 expects ann files with `metainfo` and `data_list`, while
+        UniAD's released info files store `metadata` + `infos`.
+        """
+        data_infos = self.load_annotations(self.ann_file)
+        self.data_infos = data_infos
+        return data_infos
 
     def load_annotations(self, ann_file):
         """Load annotations from ann_file.
@@ -149,7 +262,8 @@ class NuScenesE2EDataset(NuScenesDataset):
         """
         if self.file_client_args['backend'] == 'disk':
             # data_infos = mmcv.load(ann_file)
-            data = pickle.loads(self.file_client.get(ann_file.name))
+            ann_path = ann_file.name if hasattr(ann_file, 'name') else ann_file
+            data = pickle.loads(self.file_client.get(ann_path))
             data_infos = list(
                 sorted(data['infos'], key=lambda e: e['timestamp']))
             data_infos = data_infos[::self.load_interval]
@@ -206,11 +320,11 @@ class NuScenesE2EDataset(NuScenesDataset):
         self.pre_pipeline(input_dict)
         example = self.pipeline(input_dict) 
 
-        assert example['gt_labels_3d'].data.shape[0] == example['gt_fut_traj'].shape[0]
-        assert example['gt_labels_3d'].data.shape[0] == example['gt_past_traj'].shape[0]
+        assert self._label_count(example) == example['gt_fut_traj'].shape[0]
+        assert self._label_count(example) == example['gt_past_traj'].shape[0]
 
         if self.filter_empty_gt and \
-                (example is None or ~(example['gt_labels_3d']._data != -1).any()):
+                (example is None or self._is_empty_gt_labels(example)):
             return None
         data_queue.insert(0, example)
 
@@ -226,11 +340,11 @@ class NuScenesE2EDataset(NuScenesDataset):
                 self.pre_pipeline(input_dict)
                 example = self.pipeline(input_dict)
                 if self.filter_empty_gt and \
-                        (example is None or ~(example['gt_labels_3d']._data != -1).any()):
+                        (example is None or self._is_empty_gt_labels(example)):
                     return None
                 frame_idx = input_dict['frame_idx']
-            assert example['gt_labels_3d'].data.shape[0] == example['gt_fut_traj'].shape[0]
-            assert example['gt_labels_3d'].data.shape[0] == example['gt_past_traj'].shape[0]
+            assert self._label_count(example) == example['gt_fut_traj'].shape[0]
+            assert self._label_count(example) == example['gt_past_traj'].shape[0]
             data_queue.insert(0, copy.deepcopy(example))
         data_queue = self.union2one(data_queue)
         return data_queue
@@ -252,10 +366,17 @@ class NuScenesE2EDataset(NuScenesDataset):
         input_dict = self.get_data_info(index)
         self.pre_pipeline(input_dict)
         example = self.pipeline(input_dict)
+        if isinstance(example, (list, tuple)):
+            example = example[0] if len(example) > 0 else None
+        if example is None:
+            return None
         data_dict = {}
         for key, value in example.items():
             if 'l2g' in key:
-                data_dict[key] = to_tensor(value[0])
+                data_dict[key] = to_tensor(value)
+            elif key == 'img_metas':
+                meta = value.data if isinstance(value, DC) else value
+                data_dict[key] = DC([meta], cpu_only=True)
             else:
                 data_dict[key] = value
         return data_dict
@@ -264,15 +385,39 @@ class NuScenesE2EDataset(NuScenesDataset):
         """
         convert sample dict into one single sample.
         """
-        imgs_list = [each['img'].data for each in queue]
-        gt_labels_3d_list = [each['gt_labels_3d'].data for each in queue]
-        gt_sdc_label_list = [each['gt_sdc_label'].data for each in queue]
+        def _payload(x):
+            if hasattr(x, '_data'):
+                return x._data
+            if isinstance(x, DC):
+                return x.data
+            return x
+
+        def _to_img_tensor(img):
+            img = _payload(img)
+            if torch.is_tensor(img):
+                return img
+            if isinstance(img, list):
+                elems = []
+                for item in img:
+                    t = item if torch.is_tensor(item) else to_tensor(item)
+                    if torch.is_tensor(t) and t.ndim == 3 and t.shape[-1] == 3:
+                        t = t.permute(2, 0, 1).contiguous()
+                    elems.append(t)
+                return torch.stack(elems)
+            t = to_tensor(img)
+            if torch.is_tensor(t) and t.ndim == 3 and t.shape[-1] == 3:
+                t = t.permute(2, 0, 1).contiguous()
+            return t
+
+        imgs_list = [_to_img_tensor(each['img']) for each in queue]
+        gt_labels_3d_list = [_payload(each['gt_labels_3d']) for each in queue]
+        gt_sdc_label_list = [_payload(each['gt_sdc_label']) for each in queue]
         gt_inds_list = [to_tensor(each['gt_inds']) for each in queue]
-        gt_bboxes_3d_list = [each['gt_bboxes_3d'].data for each in queue]
+        gt_bboxes_3d_list = [_payload(each['gt_bboxes_3d']) for each in queue]
         gt_past_traj_list = [to_tensor(each['gt_past_traj']) for each in queue]
         gt_past_traj_mask_list = [
             to_tensor(each['gt_past_traj_mask']) for each in queue]
-        gt_sdc_bbox_list = [each['gt_sdc_bbox'].data for each in queue]
+        gt_sdc_bbox_list = [_payload(each['gt_sdc_bbox']) for each in queue]
         l2g_r_mat_list = [to_tensor(each['l2g_r_mat']) for each in queue]
         l2g_t_list = [to_tensor(each['l2g_t']) for each in queue]
         # timestamp_list = [to_tensor(each['timestamp']) for each in queue]  
@@ -289,7 +434,7 @@ class NuScenesE2EDataset(NuScenesDataset):
         prev_pos = None
         prev_angle = None
         for i, each in enumerate(queue):
-            metas_map[i] = each['img_metas'].data
+            metas_map[i] = _payload(each['img_metas'])
             if i == 0:
                 metas_map[i]['prev_bev'] = False
                 prev_pos = copy.deepcopy(metas_map[i]['can_bus'][:3])  
@@ -733,7 +878,7 @@ class NuScenesE2EDataset(NuScenesDataset):
 
             data = self.prepare_train_data(idx)
             if data is None:
-                idx = self._rand_another(idx)
+                idx = self._rand_another()
                 continue
             return data
 
@@ -786,14 +931,14 @@ class NuScenesE2EDataset(NuScenesDataset):
                     elif name in ['bicycle', 'motorcycle']:
                         attr = 'cycle.with_rider'
                     else:
-                        attr = NuScenesDataset.DefaultAttribute[name]
+                        attr = self.DefaultAttribute.get(name, '')
                 else:
                     if name in ['pedestrian']:
                         attr = 'pedestrian.standing'
                     elif name in ['bus']:
                         attr = 'vehicle.stopped'
                     else:
-                        attr = NuScenesDataset.DefaultAttribute[name]
+                        attr = self.DefaultAttribute.get(name, '')
 
                 # center_ = box.center.tolist()
                 # change from ground height to center height
@@ -917,14 +1062,14 @@ class NuScenesE2EDataset(NuScenesDataset):
                     elif name in ['bicycle', 'motorcycle']:
                         attr = 'cycle.with_rider'
                     else:
-                        attr = NuScenesDataset.DefaultAttribute[name]
+                        attr = self.DefaultAttribute.get(name, '')
                 else:
                     if name in ['pedestrian']:
                         attr = 'pedestrian.standing'
                     elif name in ['bus']:
                         attr = 'vehicle.stopped'
                     else:
-                        attr = NuScenesDataset.DefaultAttribute[name]
+                        attr = self.DefaultAttribute.get(name, '')
 
                 nusc_anno = dict(
                     sample_token=sample_token,
@@ -1172,6 +1317,11 @@ class NuScenesE2EDataset(NuScenesDataset):
             detail['{}/mAP'.format(metric_prefix)] = metrics['mean_ap']
 
         if 'track' in self.eval_mod:
+            if TrackingEval is None:
+                raise ModuleNotFoundError(
+                    "Tracking evaluation requires `motmetrics`. "
+                    "Install with: pip install motmetrics"
+                ) from _tracking_eval_import_error
             cfg = config_factory("tracking_nips_2019")
             self.nusc_eval_track = TrackingEval(
                 config=cfg,

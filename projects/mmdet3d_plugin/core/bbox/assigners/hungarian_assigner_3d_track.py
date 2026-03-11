@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from mmengine.structures import InstanceData
 
 from mmdet.core.bbox.builder import BBOX_ASSIGNERS
 from mmdet.core.bbox.assigners import BaseAssigner
@@ -91,7 +92,18 @@ class HungarianAssigner3DTrack(BaseAssigner):
             return (None, None)
         # 2. compute the weighted costs
         # classification and bboxcost.
-        cls_cost = self.cls_cost(cls_pred, gt_labels)
+        if not torch.is_tensor(gt_labels):
+            gt_labels = torch.as_tensor(gt_labels, device=cls_pred.device)
+        else:
+            gt_labels = gt_labels.to(device=cls_pred.device)
+        try:
+            # mmcv1/mmdet2-style cost API
+            cls_cost = self.cls_cost(cls_pred, gt_labels)
+        except Exception:
+            # mmengine/mmdet3-style cost API
+            pred_instances = InstanceData(scores=cls_pred)
+            gt_instances = InstanceData(labels=gt_labels.long())
+            cls_cost = self.cls_cost(pred_instances, gt_instances)
         # regression L1 cost
         reg_cost = self.reg_cost(bbox_pred[:, :8], gt_bboxes[:, :8])
         # weighted sum of above three costs
@@ -119,4 +131,3 @@ class HungarianAssigner3DTrack(BaseAssigner):
         assigned_labels[matched_row_inds] = gt_labels[matched_col_inds]
         
         return (matched_row_inds, matched_col_inds)
-
