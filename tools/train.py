@@ -9,6 +9,7 @@ import copy
 import os
 import time
 import warnings
+from contextlib import contextmanager
 from os import path as osp
 
 try:
@@ -50,6 +51,36 @@ except Exception:
     mmseg_version = 'unknown'
 
 warnings.filterwarnings("ignore")
+
+
+@contextmanager
+def _suppress_native_stdio():
+    stdout_fd = os.dup(1)
+    stderr_fd = os.dup(2)
+    try:
+        with open(os.devnull, 'w') as devnull:
+            os.dup2(devnull.fileno(), 1)
+            os.dup2(devnull.fileno(), 2)
+            yield
+    finally:
+        os.dup2(stdout_fd, 1)
+        os.dup2(stderr_fd, 2)
+        os.close(stdout_fd)
+        os.close(stderr_fd)
+
+
+def _collect_env_quiet(distributed):
+    try:
+        rank, _ = get_dist_info()
+    except Exception:
+        rank = 0
+    if distributed and rank != 0:
+        return None
+    try:
+        with _suppress_native_stdio():
+            return collect_env()
+    except Exception:
+        return collect_env()
 
 
 def _build_dataset_compat(cfg):
@@ -314,7 +345,6 @@ def main():
 
                 for m in _module_dir[1:]:
                     _module_path = _module_path + '.' + m
-                print(_module_path)
                 plg_lib = importlib.import_module(_module_path)
             else:
                 # import dir is the dirpath for the config file
@@ -323,7 +353,6 @@ def main():
                 _module_path = _module_dir[0]
                 for m in _module_dir[1:]:
                     _module_path = _module_path + '.' + m
-                print(_module_path)
                 plg_lib = importlib.import_module(_module_path)
             _sync_custom_model_registries()
             _sync_cross_stack_registries()
@@ -383,12 +412,15 @@ def main():
     # environment info and seed, which will be logged
     meta = dict()
     # log env info
-    env_info_dict = collect_env()
-    env_info = '\n'.join([(f'{k}: {v}') for k, v in env_info_dict.items()])
-    dash_line = '-' * 60 + '\n'
-    logger.info('Environment info:\n' + dash_line + env_info + '\n' +
-                dash_line)
-    meta['env_info'] = env_info
+    env_info_dict = _collect_env_quiet(distributed)
+    if env_info_dict is not None:
+        env_info = '\n'.join([(f'{k}: {v}') for k, v in env_info_dict.items()])
+        dash_line = '-' * 60 + '\n'
+        logger.info('Environment info:\n' + dash_line + env_info + '\n' +
+                    dash_line)
+        meta['env_info'] = env_info
+    else:
+        meta['env_info'] = ''
     meta['config'] = cfg.pretty_text
 
     # log some basic info

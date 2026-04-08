@@ -1,58 +1,6 @@
-import random
-import warnings
+import copy
 import os
-import numpy as np
-import torch
-import torch.distributed as dist
-from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
-try:
-    from mmcv.runner import (HOOKS, DistSamplerSeedHook, EpochBasedRunner,
-                             Fp16OptimizerHook, OptimizerHook, build_optimizer,
-                             build_runner, get_dist_info)
-except Exception:
-    from mmcv_wrapper import HOOKS, Fp16OptimizerHook, build_runner, get_dist_info
-    from mmengine.hooks import DistSamplerSeedHook
-
-    class EpochBasedRunner:  # compatibility marker for isinstance checks
-        pass
-
-    class OptimizerHook:
-        def __init__(self, **kwargs):
-            self.kwargs = kwargs
-
-    def build_optimizer(model, optimizer_cfg):
-        cfg = dict(optimizer_cfg)
-        opt_type = cfg.pop('type')
-        # Old-style config keys not supported by torch optimizer constructor.
-        cfg.pop('paramwise_cfg', None)
-        cfg.pop('constructor', None)
-        if opt_type == 'AdamW2':
-            opt_type = 'AdamW'
-        opt_cls = getattr(torch.optim, opt_type, None)
-        if opt_cls is None:
-            raise ValueError(f'Unsupported optimizer type in compat mode: {opt_type}')
-        params = model.parameters() if not hasattr(model, 'module') else model.module.parameters()
-        return opt_cls(params, **cfg)
-
-try:
-    from mmcv.utils import build_from_cfg
-except Exception:
-    from mmengine.registry import build_from_cfg
-
-try:
-    from mmdet.core import EvalHook
-except Exception:
-    class EvalHook:
-        def __init__(self, *args, **kwargs):
-            pass
-
-try:
-    from mmdet.datasets import (build_dataset, replace_ImageToTensor)
-except Exception:
-    build_dataset = None
-
-    def replace_ImageToTensor(pipeline):
-        return pipeline
+import warnings
 
 try:
     from mmdet.utils import get_root_logger
@@ -66,161 +14,218 @@ except Exception:
             logger.addHandler(logging.StreamHandler())
         logger.setLevel(level)
         return logger
-import time
-import os.path as osp
+
 from projects.mmdet3d_plugin.datasets.builder import build_dataloader
 
 
-class _CompatEpochRunner:
-    """Minimal mmcv1-style runner for mmengine/mmcv2 mixed stacks."""
+def _maybe_to_dict(cfg_obj):
+    """Convert config nodes to plain dict when possible."""
+    if cfg_obj is None:
+        return None
+    if isinstance(cfg_obj, dict):
+        return copy.deepcopy(cfg_obj)
+    try:
+        return copy.deepcopy(dict(cfg_obj))
+    except Exception:
+        return copy.deepcopy(cfg_obj)
 
-    def __init__(self, model, optimizer, work_dir, logger, meta=None, max_epochs=1, eval_model=None):
-        self.model = model
-        self.optimizer = optimizer
-        self.work_dir = work_dir
-        self.logger = logger
-        self.meta = meta or {}
-        self.eval_model = eval_model
-        self.max_epochs = int(max_epochs)
-        self.epoch = 0
-        self.iter = 0
-        self._hooks = []
-        self.timestamp = None
-        self.rank, _ = get_dist_info()
 
-    def register_training_hooks(self, *args, **kwargs):
-        # Keep signature compatibility; detailed hook behavior is skipped in compat mode.
-        return
+def _convert_lr_config_to_param_scheduler(cfg, max_epochs):
+    """Translate mmcv-style lr_config to mmengine param_scheduler configs."""
+    lr_cfg = cfg.get('lr_config', None)
+    if lr_cfg is None:
+        return None
+    lr_cfg = _maybe_to_dict(lr_cfg)
+    if not isinstance(lr_cfg, dict):
+        return None
 
-    def register_hook(self, hook, priority='NORMAL'):
-        self._hooks.append(hook)
+    schedulers = []
+    warmup = lr_cfg.get('warmup', None)
+    warmup_iters = int(lr_cfg.get('warmup_iters', 0) or 0)
+    if warmup == 'linear' and warmup_iters > 0:
+        schedulers.append(
+            dict(
+                type='LinearLR',
+                by_epoch=False,
+                begin=0,
+                end=warmup_iters,
+                start_factor=float(lr_cfg.get('warmup_ratio', 1.0 / 3)),
+            ))
+    elif warmup is not None and warmup_iters > 0:
+        warnings.warn(
+            f'Unsupported warmup type "{warmup}" in mmengine conversion, skip warmup.',
+            UserWarning)
 
-    def load_checkpoint(self, filename):
-        from mmcv_wrapper import load_checkpoint as compat_load_checkpoint
-        compat_load_checkpoint(self.model, filename, map_location='cpu', strict=False, logger=self.logger)
+    policy = str(lr_cfg.get('policy', '')).lower()
+    if policy == 'cosineannealing':
+        main_scheduler = dict(
+            type='CosineAnnealingLR',
+            by_epoch=True,
+            begin=0,
+            end=int(max_epochs),
+            T_max=int(max_epochs),
+        )
+        if 'min_lr_ratio' in lr_cfg:
+            main_scheduler['eta_min_ratio'] = float(lr_cfg['min_lr_ratio'])
+        elif 'min_lr' in lr_cfg:
+            main_scheduler['eta_min'] = float(lr_cfg['min_lr'])
+        schedulers.append(main_scheduler)
+    elif policy in ('step', 'steplr'):
+        steps = lr_cfg.get('step', [])
+        if isinstance(steps, int):
+            steps = [steps]
+        schedulers.append(
+            dict(
+                type='MultiStepLR',
+                by_epoch=True,
+                begin=0,
+                end=int(max_epochs),
+                milestones=[int(s) for s in steps],
+                gamma=float(lr_cfg.get('gamma', 0.1)),
+            ))
+    elif policy:
+        warnings.warn(
+            f'Unsupported lr policy "{lr_cfg.get("policy")}" in mmengine conversion, '
+            'use fixed learning rate.',
+            UserWarning)
 
-    def resume(self, filename):
-        ckpt = torch.load(filename, map_location='cpu')
-        state_dict = ckpt.get('state_dict', ckpt.get('model', ckpt))
-        self.model.load_state_dict(state_dict, strict=False)
-        if 'optimizer' in ckpt:
-            try:
-                self.optimizer.load_state_dict(ckpt['optimizer'])
-            except Exception:
-                pass
-        self.epoch = int(ckpt.get('meta', {}).get('epoch', self.epoch))
-        self.iter = int(ckpt.get('meta', {}).get('iter', self.iter))
+    return schedulers or None
 
-    def _call_hook(self, fn_name):
-        for hook in self._hooks:
-            fn = getattr(hook, fn_name, None)
-            if callable(fn):
-                fn(self)
 
-    def run(self, data_loaders, workflow):
-        if not data_loaders:
-            raise RuntimeError('No dataloader provided to runner.')
-        data_loader = data_loaders[0]
-        world_size = 1
-        if dist.is_available() and dist.is_initialized():
-            world_size = dist.get_world_size()
-        local_batch_size = int(getattr(data_loader, 'batch_size', 1) or 1)
-        global_batch_size = local_batch_size * world_size
-        perf_max_iters = int(os.environ.get('PERF_MAX_ITERS', '0') or 0)
-        total_train_time = 0.0
-        end_prev = time.perf_counter()
-        last_log_iter = self.iter
-        last_log_time = end_prev
-        for epoch in range(self.epoch, self.max_epochs):
-            self.epoch = epoch
-            if hasattr(data_loader, 'sampler') and hasattr(data_loader.sampler, 'set_epoch'):
-                data_loader.sampler.set_epoch(epoch)
-            self._call_hook('before_train_epoch')
-            self.model.train()
-            for i, data_batch in enumerate(data_loader):
-                iter_start = time.perf_counter()
-                data_time = iter_start - end_prev
-                self.iter += 1
-                self._call_hook('before_train_iter')
-                self.optimizer.zero_grad(set_to_none=True)
+def _build_mmengine_runner(model,
+                           data_loader,
+                           cfg,
+                           logger,
+                           distributed=False,
+                           validate=False):
+    """Build mmengine.Runner directly from existing mmcv-style cfg."""
+    from mmengine.runner import Runner
 
-                outputs = None
-                if hasattr(self.model, 'train_step'):
-                    try:
-                        outputs = self.model.train_step(data_batch, self.optimizer)
-                    except TypeError:
-                        outputs = self.model.train_step(data_batch, optim_wrapper=self.optimizer)
-                if outputs is None:
-                    outputs = self.model(**data_batch, return_loss=True)
+    runner_cfg = cfg.get('runner', None)
+    max_epochs = int(cfg.get('total_epochs', 1))
+    if runner_cfg is not None:
+        max_epochs = int(runner_cfg.get('max_epochs', max_epochs))
 
-                loss = None
-                if isinstance(outputs, dict):
-                    if torch.is_tensor(outputs.get('loss', None)):
-                        loss = outputs['loss']
-                    else:
-                        losses = []
-                        for key, value in outputs.items():
-                            if 'loss' not in key:
-                                continue
-                            if torch.is_tensor(value):
-                                losses.append(value)
-                            elif isinstance(value, (list, tuple)):
-                                losses.extend([v for v in value if torch.is_tensor(v)])
-                        if losses:
-                            loss = sum(losses)
-                elif torch.is_tensor(outputs):
-                    loss = outputs
+    optimizer_cfg = _maybe_to_dict(cfg.optimizer)
+    if isinstance(optimizer_cfg, dict):
+        paramwise_cfg = optimizer_cfg.pop('paramwise_cfg', None)
+        constructor = optimizer_cfg.pop('constructor', None)
+        if optimizer_cfg.get('type') == 'AdamW2':
+            optimizer_cfg['type'] = 'AdamW'
+    else:
+        paramwise_cfg = None
+        constructor = None
 
-                if loss is None:
-                    raise RuntimeError('Could not parse loss from model outputs in compat runner.')
+    optim_wrapper_cfg = dict(type='OptimWrapper', optimizer=optimizer_cfg)
+    if paramwise_cfg is not None:
+        optim_wrapper_cfg['paramwise_cfg'] = paramwise_cfg
+    if constructor is not None:
+        optim_wrapper_cfg['constructor'] = constructor
 
-                loss.backward()
-                self.optimizer.step()
-                self._call_hook('after_train_iter')
-                iter_end = time.perf_counter()
-                iter_time = iter_end - iter_start
-                total_train_time += iter_time
+    optimizer_config = cfg.get('optimizer_config', {}) or {}
+    grad_clip = optimizer_config.get('grad_clip', None)
+    if grad_clip is not None:
+        optim_wrapper_cfg['clip_grad'] = _maybe_to_dict(grad_clip)
 
-                if self.rank == 0 and i % 20 == 0:
-#                    self.logger.info(f'[CompatRunner] epoch={epoch + 1}/{self.max_epochs} iter={i} loss={float(loss.detach().cpu()):.6f}')
-                    iters_since_log = max(self.iter - last_log_iter, 1)
-                    elapsed_since_log = max(iter_end - last_log_time, 1e-9)
-                    throughput = global_batch_size * iters_since_log / elapsed_since_log
-                    avg_throughput = global_batch_size * self.iter / max(total_train_time, 1e-9)
-                    self.logger.info(
-                        f'[CompatRunnerPerf] epoch={epoch + 1}/{self.max_epochs} '
-                        f'iter={i} global_iter={self.iter} '
-                        f'loss={float(loss.detach().cpu()):.6f} '
-                        f'data_time={data_time:.4f}s iter_time={iter_time:.4f}s '
-                        f'throughput={throughput:.2f} samples/s '
-                        f'avg_throughput={avg_throughput:.2f} samples/s '
-                        f'global_batch={global_batch_size}')
-                    last_log_iter = self.iter
-                    last_log_time = iter_end
+    fp16_cfg = cfg.get('fp16', None)
+    if fp16_cfg is not None:
+        optim_wrapper_cfg['type'] = 'AmpOptimWrapper'
+        fp16_cfg = _maybe_to_dict(fp16_cfg)
+        if isinstance(fp16_cfg, dict):
+            optim_wrapper_cfg.update(fp16_cfg)
 
-                end_prev = iter_end
-                if perf_max_iters > 0 and self.iter >= perf_max_iters:
-                    if self.rank == 0:
-                        self.logger.info(
-                            f'[CompatRunnerPerf] Reached PERF_MAX_ITERS={perf_max_iters}, stop benchmark run.')
-                    self._call_hook('after_train_epoch')
-                    return
+    checkpoint_cfg = _maybe_to_dict(cfg.get('checkpoint_config', {})) or {}
+    checkpoint_cfg.setdefault('by_epoch', True)
+    checkpoint_cfg.setdefault('interval', 1)
 
-            self._call_hook('after_train_epoch')
+    log_cfg = _maybe_to_dict(cfg.get('log_config', {})) or {}
+    log_interval = int(log_cfg.get('interval', 50))
+    default_hooks = dict(
+        timer=dict(type='IterTimerHook'),
+        logger=dict(type='LoggerHook', interval=log_interval),
+        checkpoint=dict(type='CheckpointHook', **checkpoint_cfg),
+        sampler_seed=dict(type='DistSamplerSeedHook'),
+    )
+
+    param_scheduler = _convert_lr_config_to_param_scheduler(cfg, max_epochs)
+    if param_scheduler is not None:
+        default_hooks['param_scheduler'] = dict(type='ParamSchedulerHook')
+
+    vis_backends = [dict(type='LocalVisBackend')]
+    for hook_cfg in log_cfg.get('hooks', []) or []:
+        if isinstance(hook_cfg, dict) and hook_cfg.get('type') == 'TensorboardLoggerHook':
+            vis_backends.append(dict(type='TensorboardVisBackend'))
+            break
+    visualizer = dict(type='Visualizer', vis_backends=vis_backends, name='uniad_visualizer')
+
+    eval_cfg = _maybe_to_dict(cfg.get('evaluation', {})) or {}
+    val_interval = int(eval_cfg.get('interval', max_epochs + 1))
+    train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=val_interval)
+
+    if validate:
+        logger.warning(
+            'MMEngine runner path currently skips legacy eval-hook conversion. '
+            'Recommend adding --no-validate for this stack.')
+
+    env_cfg = _maybe_to_dict(cfg.get('env_cfg', None))
+    if env_cfg is None:
+        env_cfg = dict(dist_cfg=dict(backend=os.getenv('UNIAD_DIST_BACKEND', 'mccl')))
+
+    randomness = dict(
+        seed=cfg.get('seed', None),
+        deterministic=bool(cfg.get('deterministic', False)))
+
+    resume_from = cfg.get('resume_from', None)
+    load_from = resume_from if resume_from is not None else cfg.get('load_from', None)
+
+    runner_meta_cfg = dict(
+        find_unused_parameters=bool(cfg.get('find_unused_parameters', False)))
+
+    runner = Runner(
+        model=model,
+        work_dir=cfg.work_dir,
+        train_dataloader=data_loader,
+        train_cfg=train_cfg,
+        optim_wrapper=optim_wrapper_cfg,
+        param_scheduler=param_scheduler,
+        default_hooks=default_hooks,
+        custom_hooks=_maybe_to_dict(cfg.get('custom_hooks', None)),
+        load_from=load_from,
+        resume=bool(resume_from),
+        launcher='pytorch' if distributed else 'none',
+        env_cfg=env_cfg,
+        log_level=cfg.log_level,
+        visualizer=visualizer,
+        default_scope='mmdet3d',
+        randomness=randomness,
+        cfg=runner_meta_cfg,
+    )
+    return runner
+
+
 def custom_train_detector(model,
-                   dataset,
-                   cfg,
-                   distributed=False,
-                   validate=False,
-                   timestamp=None,
-                   eval_model=None,
-                   meta=None):
+                          dataset,
+                          cfg,
+                          distributed=False,
+                          validate=False,
+                          timestamp=None,
+                          eval_model=None,
+                          meta=None):
+    """MMEngine-only training entry for UniAD."""
     logger = get_root_logger(cfg.log_level)
+    _ = timestamp
+    _ = meta
 
-    # prepare data loaders
-   
     dataset = dataset if isinstance(dataset, (list, tuple)) else [dataset]
-    #assert len(dataset)==1s
+    if len(dataset) == 0:
+        raise ValueError('Empty dataset list is not supported.')
+    if len(dataset) > 1:
+        logger.warning(
+            'MMEngine-only path will use only the first dataset from `dataset` list.')
+
+    if eval_model is not None:
+        logger.warning('MMEngine-only path ignores eval_model argument.')
+
     if 'imgs_per_gpu' in cfg.data:
         logger.warning('"imgs_per_gpu" is deprecated in MMDet V2.0. '
                        'Please use "samples_per_gpu" instead')
@@ -235,158 +240,23 @@ def custom_train_detector(model,
                 f'{cfg.data.imgs_per_gpu} in this experiments')
         cfg.data.samples_per_gpu = cfg.data.imgs_per_gpu
 
-    data_loaders = [
-        build_dataloader(
-            ds,
-            cfg.data.samples_per_gpu,
-            cfg.data.workers_per_gpu,
-            # cfg.gpus will be ignored if distributed
-            len(cfg.gpu_ids),
-            dist=distributed,
-            seed=cfg.seed,
-            shuffler_sampler=cfg.data.shuffler_sampler,
-            nonshuffler_sampler=cfg.data.nonshuffler_sampler,
-        ) for ds in dataset
-    ]
+    train_dataloader = build_dataloader(
+        dataset[0],
+        cfg.data.samples_per_gpu,
+        cfg.data.workers_per_gpu,
+        len(cfg.gpu_ids),
+        dist=distributed,
+        seed=cfg.seed,
+        shuffler_sampler=cfg.data.shuffler_sampler,
+        nonshuffler_sampler=cfg.data.nonshuffler_sampler,
+    )
 
-    # put model on gpus
-    if distributed:
-        find_unused_parameters = cfg.get('find_unused_parameters', False)
-        # Sets the `find_unused_parameters` parameter in
-        # torch.nn.parallel.DistributedDataParallel
-        model = MMDistributedDataParallel(
-            model.musa(),
-            device_ids=[torch.musa.current_device()],
-            broadcast_buffers=False,
-            find_unused_parameters=find_unused_parameters)
-        if eval_model is not None:
-            eval_model = MMDistributedDataParallel(
-                eval_model.musa(),
-                device_ids=[torch.musa.current_device()],
-                broadcast_buffers=False,
-                find_unused_parameters=find_unused_parameters)
-    else:
-        model = MMDataParallel(
-            model.musa(cfg.gpu_ids[0]), device_ids=cfg.gpu_ids)
-        if eval_model is not None:
-            eval_model = MMDataParallel(
-                eval_model.musa(cfg.gpu_ids[0]), device_ids=cfg.gpu_ids)
-
-
-    # build runner
-    optimizer = build_optimizer(model, cfg.optimizer)
-
-    if 'runner' not in cfg:
-        cfg.runner = {
-            'type': 'EpochBasedRunner',
-            'max_epochs': cfg.total_epochs
-        }
-        warnings.warn(
-            'config is now expected to have a `runner` section, '
-            'please set `runner` in your config.', UserWarning)
-    else:
-        if 'total_epochs' in cfg:
-            assert cfg.total_epochs == cfg.runner.max_epochs
-    if eval_model is not None:
-        runner_args = dict(
-            model=model,
-            eval_model=eval_model,
-            optimizer=optimizer,
-            work_dir=cfg.work_dir,
-            logger=logger,
-            meta=meta)
-    else:
-        runner_args = dict(
-            model=model,
-            optimizer=optimizer,
-            work_dir=cfg.work_dir,
-            logger=logger,
-            meta=meta)
-
-    try:
-        runner = build_runner(cfg.runner, default_args=runner_args)
-    except Exception as e:
-        logger.warning(f'Falling back to compat runner due to build_runner failure: {e}')
-        runner = _CompatEpochRunner(
-            max_epochs=cfg.runner.get('max_epochs', cfg.get('total_epochs', 1)),
-            **runner_args)
-
-    # an ugly workaround to make .log and .log.json filenames the same
-    runner.timestamp = timestamp
-
-    # fp16 setting
-    fp16_cfg = cfg.get('fp16', None)
-    if fp16_cfg is not None:
-        optimizer_config = Fp16OptimizerHook(
-            **cfg.optimizer_config, **fp16_cfg, distributed=distributed)
-    elif distributed and 'type' not in cfg.optimizer_config:
-        optimizer_config = OptimizerHook(**cfg.optimizer_config)
-    else:
-        optimizer_config = cfg.optimizer_config
-
-    # register hooks
-    runner.register_training_hooks(cfg.lr_config, optimizer_config,
-                                   cfg.checkpoint_config, cfg.log_config,
-                                   cfg.get('momentum_config', None))
-    
-    # register profiler hook
-    #trace_config = dict(type='tb_trace', dir_name='work_dir')
-    #profiler_config = dict(on_trace_ready=trace_config)
-    #runner.register_profiler_hook(profiler_config)
-    
-    if distributed:
-        if isinstance(runner, EpochBasedRunner):
-            runner.register_hook(DistSamplerSeedHook())
-
-    # register eval hooks
-    if validate:
-        try:
-            from projects.mmdet3d_plugin.core.evaluation.eval_hooks import CustomDistEvalHook
-        except Exception as e:
-            logger.warning(f'Skip validation hook due to compatibility issue: {e}')
-            CustomDistEvalHook = None
-        from projects.mmdet3d_plugin.datasets import custom_build_dataset
-        if CustomDistEvalHook is not None:
-            # Support batch_size > 1 in validation
-            val_samples_per_gpu = cfg.data.val.pop('samples_per_gpu', 1)
-            if val_samples_per_gpu > 1:
-                assert False
-                # Replace 'ImageToTensor' to 'DefaultFormatBundle'
-                cfg.data.val.pipeline = replace_ImageToTensor(
-                    cfg.data.val.pipeline)
-            val_dataset = custom_build_dataset(cfg.data.val, dict(test_mode=True))
-
-            val_dataloader = build_dataloader(
-                val_dataset,
-                samples_per_gpu=val_samples_per_gpu,
-                workers_per_gpu=cfg.data.workers_per_gpu,
-                dist=distributed,
-                shuffle=False,
-                shuffler_sampler=cfg.data.shuffler_sampler,  # dict(type='DistributedGroupSampler'),
-                nonshuffler_sampler=cfg.data.nonshuffler_sampler,  # dict(type='DistributedSampler'),
-            )
-            eval_cfg = cfg.get('evaluation', {})
-            eval_cfg['by_epoch'] = cfg.runner['type'] != 'IterBasedRunner'
-            eval_cfg['jsonfile_prefix'] = osp.join('val', cfg.work_dir, time.ctime().replace(' ','_').replace(':','_'))
-            eval_hook = CustomDistEvalHook if distributed else EvalHook
-            runner.register_hook(eval_hook(val_dataloader, **eval_cfg))
-
-    # user-defined hooks
-    if cfg.get('custom_hooks', None):
-        custom_hooks = cfg.custom_hooks
-        assert isinstance(custom_hooks, list), \
-            f'custom_hooks expect list type, but got {type(custom_hooks)}'
-        for hook_cfg in cfg.custom_hooks:
-            assert isinstance(hook_cfg, dict), \
-                'Each item in custom_hooks expects dict type, but got ' \
-                f'{type(hook_cfg)}'
-            hook_cfg = hook_cfg.copy()
-            priority = hook_cfg.pop('priority', 'NORMAL')
-            hook = build_from_cfg(hook_cfg, HOOKS)
-            runner.register_hook(hook, priority=priority)
-
-    if cfg.resume_from and os.path.exists(cfg.resume_from):
-        runner.resume(cfg.resume_from)
-    elif cfg.load_from:
-        runner.load_checkpoint(cfg.load_from)
-    runner.run(data_loaders, cfg.workflow)
+    logger.info('Using mmengine.Runner path for training.')
+    runner = _build_mmengine_runner(
+        model=model,
+        data_loader=train_dataloader,
+        cfg=cfg,
+        logger=logger,
+        distributed=distributed,
+        validate=validate)
+    runner.train()

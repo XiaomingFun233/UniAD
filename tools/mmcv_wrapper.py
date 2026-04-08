@@ -322,6 +322,18 @@ if MMCV_MAJOR >= 2:
     
     def build_runner(cfg, default_args=None):
         if hasattr(Runner, 'from_cfg'):
+            # Check if cfg has all required mmengine parameters
+            # If it's mmcv1-style config (has 'type' but lacks 'model'), need to convert
+            if isinstance(cfg, dict) or hasattr(cfg, '_cfg_dict'):
+                cfg_dict = cfg._cfg_dict_dict if hasattr(cfg, '_cfg_dict_dict') else (dict(cfg) if isinstance(cfg, dict) else cfg)
+
+                # Check if this is mmcv1-style config (has type but missing required mmengine params)
+                if 'type' in cfg_dict and 'model' not in cfg_dict:
+                    # mmcv1-style config detected
+                    # Don't try to convert to mmengine, let compat runner handle it
+                    # This avoids issues with train_dataloader, train_cfg, optim_wrapper mismatch
+                    return None
+
             return Runner.from_cfg(cfg)
         return Runner(cfg, **(default_args or {}))
         
