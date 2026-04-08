@@ -573,7 +573,7 @@ lr_config = dict(
     warmup_ratio=1.0 / 3,
     min_lr_ratio=1e-3,
 )
-total_epochs = 6
+total_epochs = 1
 evaluation = dict(
     interval=6,
     pipeline=test_pipeline,
@@ -581,7 +581,7 @@ evaluation = dict(
 )
 runner = dict(type="EpochBasedRunner", max_epochs=total_epochs)
 log_config = dict(
-    interval=10, hooks=[dict(type="TextLoggerHook"), dict(type="TensorboardLoggerHook")]
+    interval=1, hooks=[dict(type="TextLoggerHook"), dict(type="TensorboardLoggerHook")]
 )
 checkpoint_config = dict(interval=1)
 load_from = "ckpts/bevformer_r101_dcn_24ep.pth"

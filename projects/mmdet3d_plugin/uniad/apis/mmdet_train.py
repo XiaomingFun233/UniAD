@@ -121,7 +121,16 @@ class _CompatEpochRunner:
         if not data_loaders:
             raise RuntimeError('No dataloader provided to runner.')
         data_loader = data_loaders[0]
-
+        world_size = 1
+        if dist.is_available() and dist.is_initialized():
+            world_size = dist.get_world_size()
+        local_batch_size = int(getattr(data_loader, 'batch_size', 1) or 1)
+        global_batch_size = local_batch_size * world_size
+        perf_max_iters = int(os.environ.get('PERF_MAX_ITERS', '0') or 0)
+        total_train_time = 0.0
+        end_prev = time.perf_counter()
+        last_log_iter = self.iter
+        last_log_time = end_prev
         for epoch in range(self.epoch, self.max_epochs):
             self.epoch = epoch
             if hasattr(data_loader, 'sampler') and hasattr(data_loader.sampler, 'set_epoch'):
@@ -129,6 +138,8 @@ class _CompatEpochRunner:
             self._call_hook('before_train_epoch')
             self.model.train()
             for i, data_batch in enumerate(data_loader):
+                iter_start = time.perf_counter()
+                data_time = iter_start - end_prev
                 self.iter += 1
                 self._call_hook('before_train_iter')
                 self.optimizer.zero_grad(set_to_none=True)
@@ -166,9 +177,34 @@ class _CompatEpochRunner:
                 loss.backward()
                 self.optimizer.step()
                 self._call_hook('after_train_iter')
+                iter_end = time.perf_counter()
+                iter_time = iter_end - iter_start
+                total_train_time += iter_time
 
                 if self.rank == 0 and i % 20 == 0:
-                    self.logger.info(f'[CompatRunner] epoch={epoch + 1}/{self.max_epochs} iter={i} loss={float(loss.detach().cpu()):.6f}')
+#                    self.logger.info(f'[CompatRunner] epoch={epoch + 1}/{self.max_epochs} iter={i} loss={float(loss.detach().cpu()):.6f}')
+                    iters_since_log = max(self.iter - last_log_iter, 1)
+                    elapsed_since_log = max(iter_end - last_log_time, 1e-9)
+                    throughput = global_batch_size * iters_since_log / elapsed_since_log
+                    avg_throughput = global_batch_size * self.iter / max(total_train_time, 1e-9)
+                    self.logger.info(
+                        f'[CompatRunnerPerf] epoch={epoch + 1}/{self.max_epochs} '
+                        f'iter={i} global_iter={self.iter} '
+                        f'loss={float(loss.detach().cpu()):.6f} '
+                        f'data_time={data_time:.4f}s iter_time={iter_time:.4f}s '
+                        f'throughput={throughput:.2f} samples/s '
+                        f'avg_throughput={avg_throughput:.2f} samples/s '
+                        f'global_batch={global_batch_size}')
+                    last_log_iter = self.iter
+                    last_log_time = iter_end
+
+                end_prev = iter_end
+                if perf_max_iters > 0 and self.iter >= perf_max_iters:
+                    if self.rank == 0:
+                        self.logger.info(
+                            f'[CompatRunnerPerf] Reached PERF_MAX_ITERS={perf_max_iters}, stop benchmark run.')
+                    self._call_hook('after_train_epoch')
+                    return
 
             self._call_hook('after_train_epoch')
 def custom_train_detector(model,
