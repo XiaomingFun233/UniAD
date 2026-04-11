@@ -1,6 +1,7 @@
 import argparse
 import cv2
 import torch
+import torch_musa
 import sklearn
 import mmcv
 import os
@@ -225,8 +226,8 @@ def main():
         # outputs = single_gpu_test(model, data_loader, args.show, args.show_dir)
     else:
         model = MMDistributedDataParallel(
-            model.cuda(),
-            device_ids=[torch.cuda.current_device()],
+            model.to('musa'),
+            device_ids=[torch_musa.current_device()],
             broadcast_buffers=False)
         outputs = custom_multi_gpu_test(model, data_loader, args.tmpdir,
                                         args.gpu_collect)

@@ -2,6 +2,7 @@
 import argparse
 import time
 import torch
+import torch_musa
 from mmcv import Config
 from mmcv.parallel import MMDataParallel
 from mmcv.runner import load_checkpoint, wrap_fp16_model
@@ -34,9 +35,10 @@ def main():
     args = parse_args()
 
     cfg = Config.fromfile(args.config)
-    # set cudnn_benchmark
+    # set musa_benchmark (cudnn equivalent for MUSA)
     if cfg.get('cudnn_benchmark', False):
-        torch.backends.cudnn.benchmark = True
+        # MUSA doesn't have cudnn equivalent, skip benchmark flag
+        pass
     cfg.model.pretrained = None
     cfg.data.test.test_mode = True
 
@@ -72,12 +74,12 @@ def main():
 
     # benchmark with several samples and take the average
     for i, data in enumerate(data_loader):
-        torch.cuda.synchronize()
+        torch_musa.synchronize()
         start_time = time.perf_counter()
         with torch.no_grad():
             model(return_loss=False, rescale=True, **data)
 
-        torch.cuda.synchronize()
+        torch_musa.synchronize()
         elapsed = time.perf_counter() - start_time
 
         if i >= num_warmup:

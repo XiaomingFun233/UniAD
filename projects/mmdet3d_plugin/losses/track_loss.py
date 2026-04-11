@@ -614,6 +614,6 @@ class ClipMatcher(nn.Module):
                 self.losses_dict["pred_loss_{}".format(i)] = pred_loss_i
             else:
                 self.losses_dict["pred_loss_{}".format(i)] = torch.tensor(
-                    [0.0]).cuda()
+                    [0.0]).to('musa')
 
             decay_ratio = decay_ratio * 0.5

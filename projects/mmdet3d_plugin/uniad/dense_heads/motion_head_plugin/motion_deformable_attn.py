@@ -7,6 +7,7 @@
 import copy
 import warnings
 import torch
+import torch_musa
 import math
 import torch.nn as nn
 
@@ -451,7 +452,7 @@ class MotionDeformableAttention(BaseModule):
             raise ValueError(
                 f'Last dim of reference_trajs must be'
                 f' 2 or 4, but get {reference_trajs.shape[-1]} instead.')
-        if torch.cuda.is_available() and value.is_cuda:
+        if torch_musa.is_available() and value.device.type == 'musa':
 
             # using fp16 deformable attention is unstable because it performs many sum operations
             if value.dtype == torch.float16:

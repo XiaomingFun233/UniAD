@@ -8,7 +8,10 @@ import torch
 import torch.nn as nn
 import numpy as np
 from skimage.draw import polygon
-from pytorch_lightning.metrics.metric import Metric
+try:
+    from pytorch_lightning.metrics.metric import Metric
+except ImportError:
+    from torchmetrics import Metric
 from ..occ_head_plugin import calculate_birds_eye_view_parameters, gen_dx_bx
 
 

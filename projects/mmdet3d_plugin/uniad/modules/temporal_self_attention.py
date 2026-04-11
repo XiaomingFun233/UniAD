@@ -8,6 +8,7 @@ from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFuncti
 from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 import warnings
 import torch
+import torch_musa
 import torch.nn as nn
 from mmcv.cnn import xavier_init, constant_init
 from mmcv.cnn.bricks.registry import ATTENTION
@@ -234,7 +235,7 @@ class TemporalSelfAttention(BaseModule):
             raise ValueError(
                 f'Last dim of reference_points must be'
                 f' 2 or 4, but get {reference_points.shape[-1]} instead.')
-        if torch.cuda.is_available() and value.is_cuda:
+        if torch_musa.is_available() and value.device.type == 'musa':
 
             # using fp16 deformable attention is unstable because it performs many sum operations
             if value.dtype == torch.float16:

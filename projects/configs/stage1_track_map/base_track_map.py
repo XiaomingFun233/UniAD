@@ -274,7 +274,7 @@ model = dict(
                     attn_cfgs=dict(
                         type='MultiScaleDeformableAttention',
                         embed_dims=_dim_,
-                        num_levels=_num_levels_,
+                        num_levels=1,
                          ),
                     feedforward_channels=_feed_dim_,
                     ffn_dropout=0.1,
@@ -294,7 +294,7 @@ model = dict(
                         dict(
                             type='MultiScaleDeformableAttention',
                             embed_dims=_dim_,
-                            num_levels=_num_levels_,
+                            num_levels=1,
                         )
                     ],
                     feedforward_channels=_feed_dim_,

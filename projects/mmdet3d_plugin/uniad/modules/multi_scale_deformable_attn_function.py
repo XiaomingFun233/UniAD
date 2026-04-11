@@ -5,7 +5,13 @@
 # ---------------------------------------------
 
 import torch
-from torch.cuda.amp import custom_bwd, custom_fwd
+import torch_musa
+try:
+    # torch_musa>=2.7 exposes AMP helpers in core.amp.
+    from torch_musa.core.amp import custom_bwd, custom_fwd
+except ImportError:
+    # Backward compatibility for older torch_musa layouts.
+    from torch_musa.amp import custom_bwd, custom_fwd
 from torch.autograd.function import Function, once_differentiable
 from mmcv.utils import ext_loader
 ext_module = ext_loader.load_ext(
