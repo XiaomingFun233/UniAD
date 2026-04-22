@@ -1,0 +1,2634 @@
+W0421 15:12:39.472000 289999 torch/distributed/run.py:766] 
+W0421 15:12:39.472000 289999 torch/distributed/run.py:766] *****************************************
+W0421 15:12:39.472000 289999 torch/distributed/run.py:766] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0421 15:12:39.472000 289999 torch/distributed/run.py:766] *****************************************
+projects.mmdet3d_plugin
+projects.mmdet3d_plugin
+projects.mmdet3d_plugin
+projects.mmdet3d_plugin
+projects.mmdet3d_plugin
+projects.mmdet3d_plugin
+projects.mmdet3d_plugin
+projects.mmdet3d_plugin
+clang-14: error: argument to '-V' is missing (expected 1 value)
+clang-14: error: no input files
+clang-14: error: argument to '-V' is missing (expected 1 value)
+clang-14: error: no input files
+clang-14: error: argument to '-V' is missing (expected 1 value)
+clang-14: error: no input files
+clang-14: error: argument to '-V' is missing (expected 1 value)
+clang-14: error: no input files
+clang-14: error: argument to '-V' is missing (expected 1 value)
+clang-14: error: no input files
+clang-14: error: argument to '-V' is missing (expected 1 value)
+clang-14: error: no input files
+clang-14: error: argument to '-V' is missing (expected 1 value)
+clang-14: error: no input files
+2026-04-21 15:12:52,768 - mmdet - INFO - Environment info:
+------------------------------------------------------------
+sys.platform: linux
+Python: 3.10.12 (main, Nov  4 2025, 08:48:33) [GCC 11.4.0]
+CUDA available: False
+MUSA available: True
+GPU 0,1,2,3,4,5,6,7: MTT S5000
+MUSA_HOME: /usr/local/musa
+MCC: 
+GCC: x86_64-linux-gnu-gcc (Ubuntu 11.4.0-1ubuntu1~22.04.2) 11.4.0
+PyTorch: 2.7.1
+PyTorch compiling details: PyTorch built with:
+  - GCC 11.4
+  - C++ Version: 201703
+  - Intel(R) oneAPI Math Kernel Library Version 2023.1-Product Build 20230303 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v3.7.1 (Git Hash N/A)
+  - OpenMP 201511 (a.k.a. OpenMP 4.5)
+  - LAPACK is enabled (usually provided by MKL)
+  - NNPACK is enabled
+  - CPU capability usage: AVX512
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, COMMIT_SHA=e2d141dbde55c2a4370fac5165b0561b6af4798b, CXX_COMPILER=/usr/bin/c++, CXX_FLAGS= -D_GLIBCXX_USE_CXX11_ABI=1 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOCUPTI -DLIBKINETO_NOROCTRACER -DLIBKINETO_NOXPUPTI=ON -DUSE_FBGEMM -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=range-loop-construct -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-unknown-pragmas -Wno-unused-parameter -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wsuggest-override -Wno-psabi -Wno-error=old-style-cast -fdiagnostics-color=always -faligned-new -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Wno-stringop-overflow, FORCE_FALLBACK_CUDA_MPI=1, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, TORCH_VERSION=2.7.1, USE_CUDA=OFF, USE_CUDNN=OFF, USE_CUSPARSELT=OFF, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_GLOO=ON, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=ON, USE_NCCL=OFF, USE_NNPACK=ON, USE_OPENMP=ON, USE_ROCM=OFF, USE_ROCM_KERNEL_ASSERT=OFF, 
+
+TorchVision: 0.22.1+6b25dcc
+OpenCV: 4.9.0
+MMCV: 1.6.1
+MMCV Compiler: GCC 11.4
+MMCV CUDA Compiler: 40.30.4
+MMCV MUSA Compiler: 40.30.4
+MMDetection: 2.26.0
+MMSegmentation: 0.29.1
+MMDetection3D: 1.0.0rc6+e3884d6
+spconv2.0: False
+------------------------------------------------------------
+
+clang-14: error: argument to '-V' is missing (expected 1 value)
+clang-14: error: no input files
+2026-04-21 15:12:54,280 - mmdet - INFO - Distributed training: True
+2026-04-21 15:12:56,037 - mmdet - INFO - Config:
+point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+class_names = [
+    'car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier',
+    'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
+]
+dataset_type = 'NuScenesE2EDataset'
+data_root = 'data/nuscenes/'
+input_modality = dict(
+    use_lidar=False,
+    use_camera=True,
+    use_radar=False,
+    use_map=False,
+    use_external=True)
+file_client_args = dict(backend='disk')
+train_pipeline = [
+    dict(
+        type='LoadMultiViewImageFromFilesInCeph',
+        to_float32=True,
+        file_client_args=dict(backend='disk'),
+        img_root=''),
+    dict(type='PhotoMetricDistortionMultiViewImage'),
+    dict(
+        type='LoadAnnotations3D_E2E',
+        with_bbox_3d=True,
+        with_label_3d=True,
+        with_attr_label=False,
+        with_future_anns=True,
+        with_ins_inds_3d=True,
+        ins_inds_add_1=True),
+    dict(
+        type='GenerateOccFlowLabels',
+        grid_conf=dict(
+            xbound=[-50.0, 50.0, 0.5],
+            ybound=[-50.0, 50.0, 0.5],
+            zbound=[-10.0, 10.0, 20.0]),
+        ignore_index=255,
+        only_vehicle=True,
+        filter_invisible=False),
+    dict(
+        type='ObjectRangeFilterTrack',
+        point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+    dict(
+        type='ObjectNameFilterTrack',
+        classes=[
+            'car', 'truck', 'construction_vehicle', 'bus', 'trailer',
+            'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
+        ]),
+    dict(
+        type='NormalizeMultiviewImage',
+        mean=[103.53, 116.28, 123.675],
+        std=[1.0, 1.0, 1.0],
+        to_rgb=False),
+    dict(type='PadMultiViewImage', size_divisor=32),
+    dict(
+        type='DefaultFormatBundle3D',
+        class_names=[
+            'car', 'truck', 'construction_vehicle', 'bus', 'trailer',
+            'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
+        ]),
+    dict(
+        type='CustomCollect3D',
+        keys=[
+            'gt_bboxes_3d', 'gt_labels_3d', 'gt_inds', 'img', 'timestamp',
+            'l2g_r_mat', 'l2g_t', 'gt_fut_traj', 'gt_fut_traj_mask',
+            'gt_past_traj', 'gt_past_traj_mask', 'gt_sdc_bbox', 'gt_sdc_label',
+            'gt_sdc_fut_traj', 'gt_sdc_fut_traj_mask', 'gt_lane_labels',
+            'gt_lane_bboxes', 'gt_lane_masks', 'gt_segmentation',
+            'gt_instance', 'gt_centerness', 'gt_offset', 'gt_flow',
+            'gt_backward_flow', 'gt_occ_has_invalid_frame',
+            'gt_occ_img_is_valid', 'gt_future_boxes', 'gt_future_labels',
+            'sdc_planning', 'sdc_planning_mask', 'command'
+        ])
+]
+test_pipeline = [
+    dict(
+        type='LoadMultiViewImageFromFilesInCeph',
+        to_float32=True,
+        file_client_args=dict(backend='disk'),
+        img_root=''),
+    dict(
+        type='NormalizeMultiviewImage',
+        mean=[103.53, 116.28, 123.675],
+        std=[1.0, 1.0, 1.0],
+        to_rgb=False),
+    dict(type='PadMultiViewImage', size_divisor=32),
+    dict(
+        type='LoadAnnotations3D_E2E',
+        with_bbox_3d=False,
+        with_label_3d=False,
+        with_attr_label=False,
+        with_future_anns=True,
+        with_ins_inds_3d=False,
+        ins_inds_add_1=True),
+    dict(
+        type='GenerateOccFlowLabels',
+        grid_conf=dict(
+            xbound=[-50.0, 50.0, 0.5],
+            ybound=[-50.0, 50.0, 0.5],
+            zbound=[-10.0, 10.0, 20.0]),
+        ignore_index=255,
+        only_vehicle=True,
+        filter_invisible=False),
+    dict(
+        type='MultiScaleFlipAug3D',
+        img_scale=(1600, 900),
+        pts_scale_ratio=1,
+        flip=False,
+        transforms=[
+            dict(
+                type='DefaultFormatBundle3D',
+                class_names=[
+                    'car', 'truck', 'construction_vehicle', 'bus', 'trailer',
+                    'barrier', 'motorcycle', 'bicycle', 'pedestrian',
+                    'traffic_cone'
+                ],
+                with_label=False),
+            dict(
+                type='CustomCollect3D',
+                keys=[
+                    'img', 'timestamp', 'l2g_r_mat', 'l2g_t', 'gt_lane_labels',
+                    'gt_lane_bboxes', 'gt_lane_masks', 'gt_segmentation',
+                    'gt_instance', 'gt_centerness', 'gt_offset', 'gt_flow',
+                    'gt_backward_flow', 'gt_occ_has_invalid_frame',
+                    'gt_occ_img_is_valid', 'sdc_planning', 'sdc_planning_mask',
+                    'command'
+                ])
+        ])
+]
+eval_pipeline = [
+    dict(
+        type='LoadPointsFromFile',
+        coord_type='LIDAR',
+        load_dim=5,
+        use_dim=5,
+        file_client_args=dict(backend='disk')),
+    dict(
+        type='LoadPointsFromMultiSweeps',
+        sweeps_num=10,
+        file_client_args=dict(backend='disk')),
+    dict(
+        type='DefaultFormatBundle3D',
+        class_names=[
+            'car', 'truck', 'trailer', 'bus', 'construction_vehicle',
+            'bicycle', 'motorcycle', 'pedestrian', 'traffic_cone', 'barrier'
+        ],
+        with_label=False),
+    dict(type='Collect3D', keys=['points'])
+]
+data = dict(
+    samples_per_gpu=1,
+    workers_per_gpu=8,
+    train=dict(
+        type='NuScenesE2EDataset',
+        data_root='data/nuscenes/',
+        ann_file='data/infos/nuscenes_infos_temporal_train.pkl',
+        pipeline=[
+            dict(
+                type='LoadMultiViewImageFromFilesInCeph',
+                to_float32=True,
+                file_client_args=dict(backend='disk'),
+                img_root=''),
+            dict(type='PhotoMetricDistortionMultiViewImage'),
+            dict(
+                type='LoadAnnotations3D_E2E',
+                with_bbox_3d=True,
+                with_label_3d=True,
+                with_attr_label=False,
+                with_future_anns=True,
+                with_ins_inds_3d=True,
+                ins_inds_add_1=True),
+            dict(
+                type='GenerateOccFlowLabels',
+                grid_conf=dict(
+                    xbound=[-50.0, 50.0, 0.5],
+                    ybound=[-50.0, 50.0, 0.5],
+                    zbound=[-10.0, 10.0, 20.0]),
+                ignore_index=255,
+                only_vehicle=True,
+                filter_invisible=False),
+            dict(
+                type='ObjectRangeFilterTrack',
+                point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+            dict(
+                type='ObjectNameFilterTrack',
+                classes=[
+                    'car', 'truck', 'construction_vehicle', 'bus', 'trailer',
+                    'barrier', 'motorcycle', 'bicycle', 'pedestrian',
+                    'traffic_cone'
+                ]),
+            dict(
+                type='NormalizeMultiviewImage',
+                mean=[103.53, 116.28, 123.675],
+                std=[1.0, 1.0, 1.0],
+                to_rgb=False),
+            dict(type='PadMultiViewImage', size_divisor=32),
+            dict(
+                type='DefaultFormatBundle3D',
+                class_names=[
+                    'car', 'truck', 'construction_vehicle', 'bus', 'trailer',
+                    'barrier', 'motorcycle', 'bicycle', 'pedestrian',
+                    'traffic_cone'
+                ]),
+            dict(
+                type='CustomCollect3D',
+                keys=[
+                    'gt_bboxes_3d', 'gt_labels_3d', 'gt_inds', 'img',
+                    'timestamp', 'l2g_r_mat', 'l2g_t', 'gt_fut_traj',
+                    'gt_fut_traj_mask', 'gt_past_traj', 'gt_past_traj_mask',
+                    'gt_sdc_bbox', 'gt_sdc_label', 'gt_sdc_fut_traj',
+                    'gt_sdc_fut_traj_mask', 'gt_lane_labels', 'gt_lane_bboxes',
+                    'gt_lane_masks', 'gt_segmentation', 'gt_instance',
+                    'gt_centerness', 'gt_offset', 'gt_flow',
+                    'gt_backward_flow', 'gt_occ_has_invalid_frame',
+                    'gt_occ_img_is_valid', 'gt_future_boxes',
+                    'gt_future_labels', 'sdc_planning', 'sdc_planning_mask',
+                    'command'
+                ])
+        ],
+        classes=[
+            'car', 'truck', 'construction_vehicle', 'bus', 'trailer',
+            'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
+        ],
+        modality=dict(
+            use_lidar=False,
+            use_camera=True,
+            use_radar=False,
+            use_map=False,
+            use_external=True),
+        test_mode=False,
+        box_type_3d='LiDAR',
+        file_client_args=dict(backend='disk'),
+        use_valid_flag=True,
+        patch_size=[102.4, 102.4],
+        canvas_size=(200, 200),
+        bev_size=(200, 200),
+        queue_length=3,
+        predict_steps=12,
+        past_steps=4,
+        fut_steps=4,
+        use_nonlinear_optimizer=True,
+        occ_receptive_field=3,
+        occ_n_future=6,
+        occ_filter_invalid_sample=False),
+    val=dict(
+        type='NuScenesE2EDataset',
+        data_root='data/nuscenes/',
+        ann_file='data/infos/nuscenes_infos_temporal_val.pkl',
+        pipeline=[
+            dict(
+                type='LoadMultiViewImageFromFilesInCeph',
+                to_float32=True,
+                file_client_args=dict(backend='disk'),
+                img_root=''),
+            dict(
+                type='NormalizeMultiviewImage',
+                mean=[103.53, 116.28, 123.675],
+                std=[1.0, 1.0, 1.0],
+                to_rgb=False),
+            dict(type='PadMultiViewImage', size_divisor=32),
+            dict(
+                type='LoadAnnotations3D_E2E',
+                with_bbox_3d=False,
+                with_label_3d=False,
+                with_attr_label=False,
+                with_future_anns=True,
+                with_ins_inds_3d=False,
+                ins_inds_add_1=True),
+            dict(
+                type='GenerateOccFlowLabels',
+                grid_conf=dict(
+                    xbound=[-50.0, 50.0, 0.5],
+                    ybound=[-50.0, 50.0, 0.5],
+                    zbound=[-10.0, 10.0, 20.0]),
+                ignore_index=255,
+                only_vehicle=True,
+                filter_invisible=False),
+            dict(
+                type='MultiScaleFlipAug3D',
+                img_scale=(1600, 900),
+                pts_scale_ratio=1,
+                flip=False,
+                transforms=[
+                    dict(
+                        type='DefaultFormatBundle3D',
+                        class_names=[
+                            'car', 'truck', 'construction_vehicle', 'bus',
+                            'trailer', 'barrier', 'motorcycle', 'bicycle',
+                            'pedestrian', 'traffic_cone'
+                        ],
+                        with_label=False),
+                    dict(
+                        type='CustomCollect3D',
+                        keys=[
+                            'img', 'timestamp', 'l2g_r_mat', 'l2g_t',
+                            'gt_lane_labels', 'gt_lane_bboxes',
+                            'gt_lane_masks', 'gt_segmentation', 'gt_instance',
+                            'gt_centerness', 'gt_offset', 'gt_flow',
+                            'gt_backward_flow', 'gt_occ_has_invalid_frame',
+                            'gt_occ_img_is_valid', 'sdc_planning',
+                            'sdc_planning_mask', 'command'
+                        ])
+                ])
+        ],
+        classes=[
+            'car', 'truck', 'construction_vehicle', 'bus', 'trailer',
+            'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
+        ],
+        modality=dict(
+            use_lidar=False,
+            use_camera=True,
+            use_radar=False,
+            use_map=False,
+            use_external=True),
+        test_mode=True,
+        box_type_3d='LiDAR',
+        file_client_args=dict(backend='disk'),
+        patch_size=[102.4, 102.4],
+        canvas_size=(200, 200),
+        bev_size=(200, 200),
+        predict_steps=12,
+        past_steps=4,
+        fut_steps=4,
+        use_nonlinear_optimizer=True,
+        samples_per_gpu=1,
+        eval_mod=['det', 'map', 'track', 'motion'],
+        occ_receptive_field=3,
+        occ_n_future=6,
+        occ_filter_invalid_sample=False),
+    test=dict(
+        type='NuScenesE2EDataset',
+        data_root='data/nuscenes/',
+        ann_file='data/infos/nuscenes_infos_temporal_val.pkl',
+        pipeline=[
+            dict(
+                type='LoadMultiViewImageFromFilesInCeph',
+                to_float32=True,
+                file_client_args=dict(backend='disk'),
+                img_root=''),
+            dict(
+                type='NormalizeMultiviewImage',
+                mean=[103.53, 116.28, 123.675],
+                std=[1.0, 1.0, 1.0],
+                to_rgb=False),
+            dict(type='PadMultiViewImage', size_divisor=32),
+            dict(
+                type='LoadAnnotations3D_E2E',
+                with_bbox_3d=False,
+                with_label_3d=False,
+                with_attr_label=False,
+                with_future_anns=True,
+                with_ins_inds_3d=False,
+                ins_inds_add_1=True),
+            dict(
+                type='GenerateOccFlowLabels',
+                grid_conf=dict(
+                    xbound=[-50.0, 50.0, 0.5],
+                    ybound=[-50.0, 50.0, 0.5],
+                    zbound=[-10.0, 10.0, 20.0]),
+                ignore_index=255,
+                only_vehicle=True,
+                filter_invisible=False),
+            dict(
+                type='MultiScaleFlipAug3D',
+                img_scale=(1600, 900),
+                pts_scale_ratio=1,
+                flip=False,
+                transforms=[
+                    dict(
+                        type='DefaultFormatBundle3D',
+                        class_names=[
+                            'car', 'truck', 'construction_vehicle', 'bus',
+                            'trailer', 'barrier', 'motorcycle', 'bicycle',
+                            'pedestrian', 'traffic_cone'
+                        ],
+                        with_label=False),
+                    dict(
+                        type='CustomCollect3D',
+                        keys=[
+                            'img', 'timestamp', 'l2g_r_mat', 'l2g_t',
+                            'gt_lane_labels', 'gt_lane_bboxes',
+                            'gt_lane_masks', 'gt_segmentation', 'gt_instance',
+                            'gt_centerness', 'gt_offset', 'gt_flow',
+                            'gt_backward_flow', 'gt_occ_has_invalid_frame',
+                            'gt_occ_img_is_valid', 'sdc_planning',
+                            'sdc_planning_mask', 'command'
+                        ])
+                ])
+        ],
+        classes=[
+            'car', 'truck', 'construction_vehicle', 'bus', 'trailer',
+            'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
+        ],
+        modality=dict(
+            use_lidar=False,
+            use_camera=True,
+            use_radar=False,
+            use_map=False,
+            use_external=True),
+        test_mode=True,
+        box_type_3d='LiDAR',
+        file_client_args=dict(backend='disk'),
+        patch_size=[102.4, 102.4],
+        canvas_size=(200, 200),
+        bev_size=(200, 200),
+        predict_steps=12,
+        past_steps=4,
+        fut_steps=4,
+        occ_n_future=6,
+        use_nonlinear_optimizer=True,
+        eval_mod=['det', 'map', 'track', 'motion']),
+    shuffler_sampler=dict(type='DistributedSampler', shuffle=False),
+    nonshuffler_sampler=dict(type='DistributedSampler', shuffle=False))
+evaluation = dict(
+    interval=20,
+    pipeline=[
+        dict(
+            type='LoadMultiViewImageFromFilesInCeph',
+            to_float32=True,
+            file_client_args=dict(backend='disk'),
+            img_root=''),
+        dict(
+            type='NormalizeMultiviewImage',
+            mean=[103.53, 116.28, 123.675],
+            std=[1.0, 1.0, 1.0],
+            to_rgb=False),
+        dict(type='PadMultiViewImage', size_divisor=32),
+        dict(
+            type='LoadAnnotations3D_E2E',
+            with_bbox_3d=False,
+            with_label_3d=False,
+            with_attr_label=False,
+            with_future_anns=True,
+            with_ins_inds_3d=False,
+            ins_inds_add_1=True),
+        dict(
+            type='GenerateOccFlowLabels',
+            grid_conf=dict(
+                xbound=[-50.0, 50.0, 0.5],
+                ybound=[-50.0, 50.0, 0.5],
+                zbound=[-10.0, 10.0, 20.0]),
+            ignore_index=255,
+            only_vehicle=True,
+            filter_invisible=False),
+        dict(
+            type='MultiScaleFlipAug3D',
+            img_scale=(1600, 900),
+            pts_scale_ratio=1,
+            flip=False,
+            transforms=[
+                dict(
+                    type='DefaultFormatBundle3D',
+                    class_names=[
+                        'car', 'truck', 'construction_vehicle', 'bus',
+                        'trailer', 'barrier', 'motorcycle', 'bicycle',
+                        'pedestrian', 'traffic_cone'
+                    ],
+                    with_label=False),
+                dict(
+                    type='CustomCollect3D',
+                    keys=[
+                        'img', 'timestamp', 'l2g_r_mat', 'l2g_t',
+                        'gt_lane_labels', 'gt_lane_bboxes', 'gt_lane_masks',
+                        'gt_segmentation', 'gt_instance', 'gt_centerness',
+                        'gt_offset', 'gt_flow', 'gt_backward_flow',
+                        'gt_occ_has_invalid_frame', 'gt_occ_img_is_valid',
+                        'sdc_planning', 'sdc_planning_mask', 'command'
+                    ])
+            ])
+    ],
+    planning_evaluation_strategy='uniad')
+checkpoint_config = dict(interval=1)
+log_config = dict(
+    interval=1,
+    hooks=[dict(type='TextLoggerHook'),
+           dict(type='TensorboardLoggerHook')])
+dist_params = dict(backend='nccl')
+log_level = 'INFO'
+work_dir = './projects/work_dirs/stage2_e2e/base_e2e/'
+load_from = 'projects/work_dirs/stage1_track_map/base_track_map/epoch_6.pth'
+resume_from = None
+workflow = [('train', 1)]
+plugin = True
+plugin_dir = 'projects/mmdet3d_plugin/'
+voxel_size = [0.2, 0.2, 8]
+patch_size = [102.4, 102.4]
+img_norm_cfg = dict(
+    mean=[103.53, 116.28, 123.675], std=[1.0, 1.0, 1.0], to_rgb=False)
+vehicle_id_list = [0, 1, 2, 3, 4, 6, 7]
+group_id_list = [[0, 1, 2, 3, 4], [6, 7], [8], [5, 9]]
+_dim_ = 256
+_pos_dim_ = 128
+_ffn_dim_ = 512
+_num_levels_ = 4
+bev_h_ = 200
+bev_w_ = 200
+_feed_dim_ = 512
+_dim_half_ = 128
+canvas_size = (200, 200)
+queue_length = 3
+predict_steps = 12
+predict_modes = 6
+fut_steps = 4
+past_steps = 4
+use_nonlinear_optimizer = True
+occ_n_future = 4
+occ_n_future_plan = 6
+occ_n_future_max = 6
+planning_steps = 6
+use_col_optim = True
+planning_evaluation_strategy = 'uniad'
+occflow_grid_conf = dict(
+    xbound=[-50.0, 50.0, 0.5],
+    ybound=[-50.0, 50.0, 0.5],
+    zbound=[-10.0, 10.0, 20.0])
+train_gt_iou_threshold = 0.3
+model = dict(
+    type='UniAD',
+    gt_iou_threshold=0.3,
+    queue_length=3,
+    use_grid_mask=True,
+    video_test_mode=True,
+    num_query=900,
+    num_classes=10,
+    vehicle_id_list=[0, 1, 2, 3, 4, 6, 7],
+    pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
+    img_backbone=dict(
+        type='ResNet',
+        depth=101,
+        num_stages=4,
+        out_indices=(1, 2, 3),
+        frozen_stages=4,
+        norm_cfg=dict(type='BN2d', requires_grad=False),
+        norm_eval=True,
+        style='caffe',
+        dcn=dict(type='DCNv2', deform_groups=1, fallback_on_stride=False),
+        stage_with_dcn=(False, False, True, True)),
+    img_neck=dict(
+        type='FPN',
+        in_channels=[512, 1024, 2048],
+        out_channels=256,
+        start_level=0,
+        add_extra_convs='on_output',
+        num_outs=4,
+        relu_before_extra_convs=True),
+    freeze_img_backbone=True,
+    freeze_img_neck=True,
+    freeze_bn=True,
+    freeze_bev_encoder=True,
+    score_thresh=0.4,
+    filter_score_thresh=0.35,
+    qim_args=dict(
+        qim_type='QIMBase',
+        merger_dropout=0,
+        update_query_pos=True,
+        fp_ratio=0.3,
+        random_drop=0.1),
+    mem_args=dict(
+        memory_bank_type='MemoryBank',
+        memory_bank_score_thresh=0.0,
+        memory_bank_len=4),
+    loss_cfg=dict(
+        type='ClipMatcher',
+        num_classes=10,
+        weight_dict=None,
+        code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2],
+        assigner=dict(
+            type='HungarianAssigner3DTrack',
+            cls_cost=dict(type='FocalLossCost', weight=2.0),
+            reg_cost=dict(type='BBox3DL1Cost', weight=0.25),
+            pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+        loss_cls=dict(
+            type='FocalLoss',
+            use_sigmoid=True,
+            gamma=2.0,
+            alpha=0.25,
+            loss_weight=2.0),
+        loss_bbox=dict(type='L1Loss', loss_weight=0.25)),
+    pts_bbox_head=dict(
+        type='BEVFormerTrackHead',
+        bev_h=200,
+        bev_w=200,
+        num_query=900,
+        num_classes=10,
+        in_channels=256,
+        sync_cls_avg_factor=True,
+        with_box_refine=True,
+        as_two_stage=False,
+        past_steps=4,
+        fut_steps=4,
+        transformer=dict(
+            type='PerceptionTransformer',
+            rotate_prev_bev=True,
+            use_shift=True,
+            use_can_bus=True,
+            embed_dims=256,
+            encoder=dict(
+                type='BEVFormerEncoder',
+                num_layers=6,
+                pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
+                num_points_in_pillar=4,
+                return_intermediate=False,
+                transformerlayers=dict(
+                    type='BEVFormerLayer',
+                    attn_cfgs=[
+                        dict(
+                            type='TemporalSelfAttention',
+                            embed_dims=256,
+                            num_levels=1),
+                        dict(
+                            type='SpatialCrossAttention',
+                            pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
+                            deformable_attention=dict(
+                                type='MSDeformableAttention3D',
+                                embed_dims=256,
+                                num_points=8,
+                                num_levels=4),
+                            embed_dims=256)
+                    ],
+                    feedforward_channels=512,
+                    ffn_dropout=0.1,
+                    operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
+                                     'ffn', 'norm'))),
+            decoder=dict(
+                type='DetectionTransformerDecoder',
+                num_layers=6,
+                return_intermediate=True,
+                transformerlayers=dict(
+                    type='DetrTransformerDecoderLayer',
+                    attn_cfgs=[
+                        dict(
+                            type='MultiheadAttention',
+                            embed_dims=256,
+                            num_heads=8,
+                            dropout=0.1),
+                        dict(
+                            type='CustomMSDeformableAttention',
+                            embed_dims=256,
+                            num_levels=1)
+                    ],
+                    feedforward_channels=512,
+                    ffn_dropout=0.1,
+                    operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
+                                     'ffn', 'norm')))),
+        bbox_coder=dict(
+            type='NMSFreeCoder',
+            post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
+            pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
+            max_num=300,
+            voxel_size=[0.2, 0.2, 8],
+            num_classes=10),
+        positional_encoding=dict(
+            type='LearnedPositionalEncoding',
+            num_feats=128,
+            row_num_embed=200,
+            col_num_embed=200),
+        loss_cls=dict(
+            type='FocalLoss',
+            use_sigmoid=True,
+            gamma=2.0,
+            alpha=0.25,
+            loss_weight=2.0),
+        loss_bbox=dict(type='L1Loss', loss_weight=0.25),
+        loss_iou=dict(type='GIoULoss', loss_weight=0.0)),
+    seg_head=dict(
+        type='PansegformerHead',
+        bev_h=200,
+        bev_w=200,
+        canvas_size=(200, 200),
+        pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
+        num_query=300,
+        num_classes=4,
+        num_things_classes=3,
+        num_stuff_classes=1,
+        in_channels=2048,
+        sync_cls_avg_factor=True,
+        as_two_stage=False,
+        with_box_refine=True,
+        transformer=dict(
+            type='SegDeformableTransformer',
+            encoder=dict(
+                type='DetrTransformerEncoder',
+                num_layers=6,
+                transformerlayers=dict(
+                    type='BaseTransformerLayer',
+                    attn_cfgs=dict(
+                        type='MultiScaleDeformableAttention',
+                        embed_dims=256,
+                        num_levels=1),
+                    feedforward_channels=512,
+                    ffn_dropout=0.1,
+                    operation_order=('self_attn', 'norm', 'ffn', 'norm'))),
+            decoder=dict(
+                type='DeformableDetrTransformerDecoder',
+                num_layers=6,
+                return_intermediate=True,
+                transformerlayers=dict(
+                    type='DetrTransformerDecoderLayer',
+                    attn_cfgs=[
+                        dict(
+                            type='MultiheadAttention',
+                            embed_dims=256,
+                            num_heads=8,
+                            dropout=0.1),
+                        dict(
+                            type='MultiScaleDeformableAttention',
+                            embed_dims=256,
+                            num_levels=1)
+                    ],
+                    feedforward_channels=512,
+                    ffn_dropout=0.1,
+                    operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
+                                     'ffn', 'norm')))),
+        positional_encoding=dict(
+            type='SinePositionalEncoding',
+            num_feats=128,
+            normalize=True,
+            offset=-0.5),
+        loss_cls=dict(
+            type='FocalLoss',
+            use_sigmoid=True,
+            gamma=2.0,
+            alpha=0.25,
+            loss_weight=2.0),
+        loss_bbox=dict(type='L1Loss', loss_weight=5.0),
+        loss_iou=dict(type='GIoULoss', loss_weight=2.0),
+        loss_mask=dict(type='DiceLoss', loss_weight=2.0),
+        thing_transformer_head=dict(
+            type='SegMaskHead', d_model=256, nhead=8, num_decoder_layers=4),
+        stuff_transformer_head=dict(
+            type='SegMaskHead',
+            d_model=256,
+            nhead=8,
+            num_decoder_layers=6,
+            self_attn=True),
+        train_cfg=dict(
+            assigner=dict(
+                type='HungarianAssigner',
+                cls_cost=dict(type='FocalLossCost', weight=2.0),
+                reg_cost=dict(
+                    type='BBoxL1Cost', weight=5.0, box_format='xywh'),
+                iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0)),
+            assigner_with_mask=dict(
+                type='HungarianAssigner_multi_info',
+                cls_cost=dict(type='FocalLossCost', weight=2.0),
+                reg_cost=dict(
+                    type='BBoxL1Cost', weight=5.0, box_format='xywh'),
+                iou_cost=dict(type='IoUCost', iou_mode='giou', weight=2.0),
+                mask_cost=dict(type='DiceCost', weight=2.0)),
+            sampler=dict(type='PseudoSampler'),
+            sampler_with_mask=dict(type='PseudoSampler_segformer'))),
+    occ_head=dict(
+        type='OccHead',
+        grid_conf=dict(
+            xbound=[-50.0, 50.0, 0.5],
+            ybound=[-50.0, 50.0, 0.5],
+            zbound=[-10.0, 10.0, 20.0]),
+        ignore_index=255,
+        bev_proj_dim=256,
+        bev_proj_nlayers=4,
+        attn_mask_thresh=0.3,
+        transformer_decoder=dict(
+            type='DetrTransformerDecoder',
+            return_intermediate=True,
+            num_layers=5,
+            transformerlayers=dict(
+                type='DetrTransformerDecoderLayer',
+                attn_cfgs=dict(
+                    type='MultiheadAttention',
+                    embed_dims=256,
+                    num_heads=8,
+                    attn_drop=0.0,
+                    proj_drop=0.0,
+                    dropout_layer=None,
+                    batch_first=False),
+                ffn_cfgs=dict(
+                    embed_dims=256,
+                    feedforward_channels=2048,
+                    num_fcs=2,
+                    act_cfg=dict(type='ReLU', inplace=True),
+                    ffn_drop=0.0,
+                    dropout_layer=None,
+                    add_identity=True),
+                feedforward_channels=2048,
+                operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
+                                 'ffn', 'norm')),
+            init_cfg=None),
+        query_dim=256,
+        query_mlp_layers=3,
+        aux_loss_weight=1.0,
+        loss_mask=dict(
+            type='FieryBinarySegmentationLoss',
+            use_top_k=True,
+            top_k_ratio=0.25,
+            future_discount=0.95,
+            loss_weight=5.0,
+            ignore_index=255),
+        loss_dice=dict(
+            type='DiceLossWithMasks',
+            use_sigmoid=True,
+            activate=True,
+            reduction='mean',
+            naive_dice=True,
+            eps=1.0,
+            ignore_index=255,
+            loss_weight=1.0),
+        pan_eval=True,
+        test_seg_thresh=0.1,
+        test_with_track_score=True),
+    motion_head=dict(
+        type='MotionHead',
+        bev_h=200,
+        bev_w=200,
+        num_query=300,
+        num_classes=10,
+        predict_steps=12,
+        predict_modes=6,
+        embed_dims=256,
+        loss_traj=dict(
+            type='TrajLoss',
+            use_variance=True,
+            cls_loss_weight=0.5,
+            nll_loss_weight=0.5,
+            loss_weight_minade=0.0,
+            loss_weight_minfde=0.25),
+        num_cls_fcs=3,
+        pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
+        group_id_list=[[0, 1, 2, 3, 4], [6, 7], [8], [5, 9]],
+        num_anchor=6,
+        use_nonlinear_optimizer=True,
+        anchor_info_path='data/others/motion_anchor_infos_mode6.pkl',
+        transformerlayers=dict(
+            type='MotionTransformerDecoder',
+            pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
+            embed_dims=256,
+            num_layers=3,
+            transformerlayers=dict(
+                type='MotionTransformerAttentionLayer',
+                batch_first=True,
+                attn_cfgs=[
+                    dict(
+                        type='MotionDeformableAttention',
+                        num_steps=12,
+                        embed_dims=256,
+                        num_levels=1,
+                        num_heads=8,
+                        num_points=4,
+                        sample_index=-1)
+                ],
+                feedforward_channels=512,
+                ffn_dropout=0.1,
+                operation_order=('cross_attn', 'norm', 'ffn', 'norm')))),
+    planning_head=dict(
+        type='PlanningHeadSingleMode',
+        embed_dims=256,
+        planning_steps=6,
+        loss_planning=dict(type='PlanningLoss'),
+        loss_collision=[
+            dict(type='CollisionLoss', delta=0.0, weight=2.5),
+            dict(type='CollisionLoss', delta=0.5, weight=1.0),
+            dict(type='CollisionLoss', delta=1.0, weight=0.25)
+        ],
+        use_col_optim=True,
+        planning_eval=True,
+        with_adapter=True),
+    train_cfg=dict(
+        pts=dict(
+            grid_size=[512, 512, 1],
+            voxel_size=[0.2, 0.2, 8],
+            point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
+            out_size_factor=4,
+            assigner=dict(
+                type='HungarianAssigner3D',
+                cls_cost=dict(type='FocalLossCost', weight=2.0),
+                reg_cost=dict(type='BBox3DL1Cost', weight=0.25),
+                iou_cost=dict(type='IoUCost', weight=0.0),
+                pc_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]))))
+info_root = 'data/infos/'
+ann_file_train = 'data/infos/nuscenes_infos_temporal_train.pkl'
+ann_file_val = 'data/infos/nuscenes_infos_temporal_val.pkl'
+ann_file_test = 'data/infos/nuscenes_infos_temporal_val.pkl'
+optimizer = dict(
+    type='AdamW',
+    lr=0.0002,
+    paramwise_cfg=dict(custom_keys=dict(img_backbone=dict(lr_mult=0.1))),
+    weight_decay=0.01)
+optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
+lr_config = dict(
+    policy='CosineAnnealing',
+    warmup='linear',
+    warmup_iters=500,
+    warmup_ratio=0.3333333333333333,
+    min_lr_ratio=0.001)
+total_epochs = 20
+runner = dict(type='EpochBasedRunner', max_epochs=20)
+find_unused_parameters = True
+logger_name = 'mmdet'
+gpu_ids = range(0, 8)
+
+2026-04-21 15:12:56,038 - mmdet - INFO - Set random seed to 0, deterministic: True
+2026-04-21 15:12:57,250 - mmdet - INFO - initialize ResNet with init_cfg [{'type': 'Kaiming', 'layer': 'Conv2d'}, {'type': 'Constant', 'val': 1, 'layer': ['_BatchNorm', 'GroupNorm']}]
+2026-04-21 15:12:57,408 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,409 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,409 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,410 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,411 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,411 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,412 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,413 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,417 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,421 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,425 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,429 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,433 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,436 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,440 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,444 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,448 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,452 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,455 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,459 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,463 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,467 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,471 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,475 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,479 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,483 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,486 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,490 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,494 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,498 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,510 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,524 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,538 - mmdet - INFO - initialize Bottleneck with init_cfg {'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+2026-04-21 15:12:57,568 - mmdet - INFO - initialize FPN with init_cfg {'type': 'Xavier', 'layer': 'Conv2d', 'distribution': 'uniform'}
+2026-04-21 15:12:57,719 - mmdet - INFO - Model:
+UniAD(
+  (pts_bbox_head): BEVFormerTrackHead(
+    (loss_cls): FocalLoss()
+    (loss_bbox): L1Loss()
+    (loss_iou): GIoULoss()
+    (activate): ReLU(inplace=True)
+    (positional_encoding): LearnedPositionalEncoding(num_feats=128, row_num_embed=200, col_num_embed=200)
+    (transformer): PerceptionTransformer(
+      (encoder): BEVFormerEncoder(
+        (layers): ModuleList(
+          (0-5): 6 x BEVFormerLayer(
+            (attentions): ModuleList(
+              (0): TemporalSelfAttention(
+                (dropout): Dropout(p=0.1, inplace=False)
+                (sampling_offsets): Linear(in_features=512, out_features=128, bias=True)
+                (attention_weights): Linear(in_features=512, out_features=64, bias=True)
+                (value_proj): Linear(in_features=256, out_features=256, bias=True)
+                (output_proj): Linear(in_features=256, out_features=256, bias=True)
+              )
+              (1): SpatialCrossAttention(
+                (dropout): Dropout(p=0.1, inplace=False)
+                (deformable_attention): MSDeformableAttention3D(
+                  (sampling_offsets): Linear(in_features=256, out_features=512, bias=True)
+                  (attention_weights): Linear(in_features=256, out_features=256, bias=True)
+                  (value_proj): Linear(in_features=256, out_features=256, bias=True)
+                )
+                (output_proj): Linear(in_features=256, out_features=256, bias=True)
+              )
+            )
+            (ffns): ModuleList(
+              (0): FFN(
+                (activate): ReLU(inplace=True)
+                (layers): Sequential(
+                  (0): Sequential(
+                    (0): Linear(in_features=256, out_features=512, bias=True)
+                    (1): ReLU(inplace=True)
+                    (2): Dropout(p=0.1, inplace=False)
+                  )
+                  (1): Linear(in_features=512, out_features=256, bias=True)
+                  (2): Dropout(p=0.1, inplace=False)
+                )
+                (dropout_layer): Identity()
+              )
+            )
+            (norms): ModuleList(
+              (0-2): 3 x LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            )
+          )
+        )
+      )
+      (decoder): DetectionTransformerDecoder(
+        (layers): ModuleList(
+          (0-5): 6 x DetrTransformerDecoderLayer(
+            (attentions): ModuleList(
+              (0): MultiheadAttention(
+                (attn): MultiheadAttention(
+                  (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+                )
+                (proj_drop): Dropout(p=0.0, inplace=False)
+                (dropout_layer): Dropout(p=0.1, inplace=False)
+              )
+              (1): CustomMSDeformableAttention(
+                (dropout): Dropout(p=0.1, inplace=False)
+                (sampling_offsets): Linear(in_features=256, out_features=64, bias=True)
+                (attention_weights): Linear(in_features=256, out_features=32, bias=True)
+                (value_proj): Linear(in_features=256, out_features=256, bias=True)
+                (output_proj): Linear(in_features=256, out_features=256, bias=True)
+              )
+            )
+            (ffns): ModuleList(
+              (0): FFN(
+                (activate): ReLU(inplace=True)
+                (layers): Sequential(
+                  (0): Sequential(
+                    (0): Linear(in_features=256, out_features=512, bias=True)
+                    (1): ReLU(inplace=True)
+                    (2): Dropout(p=0.1, inplace=False)
+                  )
+                  (1): Linear(in_features=512, out_features=256, bias=True)
+                  (2): Dropout(p=0.1, inplace=False)
+                )
+                (dropout_layer): Identity()
+              )
+            )
+            (norms): ModuleList(
+              (0-2): 3 x LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            )
+          )
+        )
+      )
+      (reference_points): Linear(in_features=256, out_features=3, bias=True)
+      (can_bus_mlp): Sequential(
+        (0): Linear(in_features=18, out_features=128, bias=True)
+        (1): ReLU(inplace=True)
+        (2): Linear(in_features=128, out_features=256, bias=True)
+        (3): ReLU(inplace=True)
+        (norm): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      )
+    )
+    (cls_branches): ModuleList(
+      (0-5): 6 x Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (2): ReLU(inplace=True)
+        (3): Linear(in_features=256, out_features=256, bias=True)
+        (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (5): ReLU(inplace=True)
+        (6): Linear(in_features=256, out_features=10, bias=True)
+      )
+    )
+    (reg_branches): ModuleList(
+      (0-5): 6 x Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=256, out_features=256, bias=True)
+        (3): ReLU()
+        (4): Linear(in_features=256, out_features=10, bias=True)
+      )
+    )
+    (past_traj_reg_branches): ModuleList(
+      (0-5): 6 x Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=256, out_features=256, bias=True)
+        (3): ReLU()
+        (4): Linear(in_features=256, out_features=16, bias=True)
+      )
+    )
+    (bev_embedding): Embedding(40000, 256)
+  )
+  (img_backbone): ResNet(
+    (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+    (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (relu): ReLU(inplace=True)
+    (maxpool): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+    (layer1): ResLayer(
+      (0): Bottleneck(
+        (conv1): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+        (downsample): Sequential(
+          (0): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (1): Bottleneck(
+        (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (2): Bottleneck(
+        (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+    )
+    (layer2): ResLayer(
+      (0): Bottleneck(
+        (conv1): Conv2d(256, 128, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+        (downsample): Sequential(
+          (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+          (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (1): Bottleneck(
+        (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (2): Bottleneck(
+        (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (3): Bottleneck(
+        (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+    )
+    (layer3): ResLayer(
+      (0): Bottleneck(
+        (conv1): Conv2d(512, 256, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+        (downsample): Sequential(
+          (0): Conv2d(512, 1024, kernel_size=(1, 1), stride=(2, 2), bias=False)
+          (1): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (1): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (2): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (3): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (4): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (5): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (6): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (7): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (8): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (9): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (10): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (11): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (12): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (13): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (14): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (15): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (16): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (17): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (18): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (19): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (20): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (21): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (22): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(256, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+    )
+    (layer4): ResLayer(
+      (0): Bottleneck(
+        (conv1): Conv2d(1024, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(512, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+        (downsample): Sequential(
+          (0): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(2, 2), bias=False)
+          (1): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (1): Bottleneck(
+        (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(512, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+      (2): Bottleneck(
+        (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): ModulatedDeformConv2dPack(
+          (conv_offset): Conv2d(512, 27, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      init_cfg={'type': 'Constant', 'val': 0, 'override': {'name': 'norm3'}}
+    )
+  )
+  init_cfg=[{'type': 'Kaiming', 'layer': 'Conv2d'}, {'type': 'Constant', 'val': 1, 'layer': ['_BatchNorm', 'GroupNorm']}]
+  (img_neck): FPN(
+    (lateral_convs): ModuleList(
+      (0): ConvModule(
+        (conv): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (1): ConvModule(
+        (conv): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (2): ConvModule(
+        (conv): Conv2d(2048, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+    )
+    (fpn_convs): ModuleList(
+      (0-2): 3 x ConvModule(
+        (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      )
+      (3): ConvModule(
+        (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+      )
+    )
+  )
+  init_cfg={'type': 'Xavier', 'layer': 'Conv2d', 'distribution': 'uniform'}
+  (grid_mask): GridMask()
+  (query_embedding): Embedding(901, 512)
+  (reference_points): Linear(in_features=256, out_features=3, bias=True)
+  (query_interact): QueryInteractionModule(
+    (self_attn): MultiheadAttention(
+      (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+    )
+    (linear1): Linear(in_features=256, out_features=256, bias=True)
+    (dropout): Dropout(p=0, inplace=False)
+    (linear2): Linear(in_features=256, out_features=256, bias=True)
+    (linear_pos1): Linear(in_features=256, out_features=256, bias=True)
+    (linear_pos2): Linear(in_features=256, out_features=256, bias=True)
+    (dropout_pos1): Dropout(p=0, inplace=False)
+    (dropout_pos2): Dropout(p=0, inplace=False)
+    (norm_pos): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (linear_feat1): Linear(in_features=256, out_features=256, bias=True)
+    (linear_feat2): Linear(in_features=256, out_features=256, bias=True)
+    (dropout_feat1): Dropout(p=0, inplace=False)
+    (dropout_feat2): Dropout(p=0, inplace=False)
+    (norm_feat): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (norm1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (norm2): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout1): Dropout(p=0, inplace=False)
+    (dropout2): Dropout(p=0, inplace=False)
+  )
+  (memory_bank): MemoryBank(
+    (save_proj): Linear(in_features=256, out_features=256, bias=True)
+    (temporal_attn): MultiheadAttention(
+      (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+    )
+    (temporal_fc1): Linear(in_features=256, out_features=256, bias=True)
+    (temporal_fc2): Linear(in_features=256, out_features=256, bias=True)
+    (temporal_norm1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (temporal_norm2): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+  )
+  (criterion): ClipMatcher(
+    (loss_cls): FocalLoss()
+    (loss_bboxes): L1Loss()
+    (loss_predictions): SmoothL1Loss()
+  )
+  (seg_head): PansegformerHead(
+    (loss_cls): FocalLoss()
+    (loss_bbox): L1Loss()
+    (loss_iou): GIoULoss()
+    (activate): ReLU(inplace=True)
+    (positional_encoding): SinePositionalEncoding(num_feats=128, temperature=10000, normalize=True, scale=6.283185307179586, eps=1e-06)
+    (transformer): SegDeformableTransformer(
+      (encoder): DetrTransformerEncoder(
+        (layers): ModuleList(
+          (0-5): 6 x BaseTransformerLayer(
+            (attentions): ModuleList(
+              (0): MultiScaleDeformableAttention(
+                (dropout): Dropout(p=0.1, inplace=False)
+                (sampling_offsets): Linear(in_features=256, out_features=64, bias=True)
+                (attention_weights): Linear(in_features=256, out_features=32, bias=True)
+                (value_proj): Linear(in_features=256, out_features=256, bias=True)
+                (output_proj): Linear(in_features=256, out_features=256, bias=True)
+              )
+            )
+            (ffns): ModuleList(
+              (0): FFN(
+                (activate): ReLU(inplace=True)
+                (layers): Sequential(
+                  (0): Sequential(
+                    (0): Linear(in_features=256, out_features=512, bias=True)
+                    (1): ReLU(inplace=True)
+                    (2): Dropout(p=0.1, inplace=False)
+                  )
+                  (1): Linear(in_features=512, out_features=256, bias=True)
+                  (2): Dropout(p=0.1, inplace=False)
+                )
+                (dropout_layer): Identity()
+              )
+            )
+            (norms): ModuleList(
+              (0-1): 2 x LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            )
+          )
+        )
+      )
+      (decoder): DeformableDetrTransformerDecoder(
+        (layers): ModuleList(
+          (0-5): 6 x DetrTransformerDecoderLayer(
+            (attentions): ModuleList(
+              (0): MultiheadAttention(
+                (attn): MultiheadAttention(
+                  (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+                )
+                (proj_drop): Dropout(p=0.0, inplace=False)
+                (dropout_layer): Dropout(p=0.1, inplace=False)
+              )
+              (1): MultiScaleDeformableAttention(
+                (dropout): Dropout(p=0.1, inplace=False)
+                (sampling_offsets): Linear(in_features=256, out_features=64, bias=True)
+                (attention_weights): Linear(in_features=256, out_features=32, bias=True)
+                (value_proj): Linear(in_features=256, out_features=256, bias=True)
+                (output_proj): Linear(in_features=256, out_features=256, bias=True)
+              )
+            )
+            (ffns): ModuleList(
+              (0): FFN(
+                (activate): ReLU(inplace=True)
+                (layers): Sequential(
+                  (0): Sequential(
+                    (0): Linear(in_features=256, out_features=512, bias=True)
+                    (1): ReLU(inplace=True)
+                    (2): Dropout(p=0.1, inplace=False)
+                  )
+                  (1): Linear(in_features=512, out_features=256, bias=True)
+                  (2): Dropout(p=0.1, inplace=False)
+                )
+                (dropout_layer): Identity()
+              )
+            )
+            (norms): ModuleList(
+              (0-2): 3 x LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            )
+          )
+        )
+      )
+      (reference_points): Linear(in_features=256, out_features=2, bias=True)
+    )
+    (bev_embedding): Embedding(40000, 256)
+    (cls_branches): ModuleList(
+      (0-5): 6 x Linear(in_features=256, out_features=3, bias=True)
+    )
+    (reg_branches): ModuleList(
+      (0-5): 6 x Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=256, out_features=256, bias=True)
+        (3): ReLU()
+        (4): Linear(in_features=256, out_features=4, bias=True)
+      )
+    )
+    (query_embedding): Embedding(300, 512)
+    (stuff_query): Embedding(1, 512)
+    (reg_branches2): ModuleList(
+      (0-3): 4 x Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=256, out_features=256, bias=True)
+        (3): ReLU()
+        (4): Linear(in_features=256, out_features=4, bias=True)
+      )
+    )
+    (cls_thing_branches): ModuleList(
+      (0-3): 4 x Linear(in_features=256, out_features=3, bias=True)
+    )
+    (cls_stuff_branches): ModuleList(
+      (0-5): 6 x Linear(in_features=256, out_features=1, bias=True)
+    )
+    (loss_mask): DiceLoss()
+    (things_mask_head): SegMaskHead(
+      (blocks): ModuleList(
+        (0-3): 4 x Block(
+          (head_norm1): LayerNorm((256,), eps=1e-06, elementwise_affine=True)
+          (attn): Attention(
+            (q): Linear(in_features=256, out_features=256, bias=True)
+            (k): Linear(in_features=256, out_features=256, bias=True)
+            (v): Linear(in_features=256, out_features=256, bias=True)
+            (attn_drop): Dropout(p=0, inplace=False)
+            (proj): Linear(in_features=256, out_features=256, bias=True)
+            (proj_drop): Dropout(p=0, inplace=False)
+            (linear_l1): Sequential(
+              (0): Linear(in_features=8, out_features=8, bias=True)
+              (1): ReLU()
+            )
+            (linear): Sequential(
+              (0): Linear(in_features=8, out_features=1, bias=True)
+              (1): ReLU()
+            )
+          )
+          (drop_path): Identity()
+          (head_norm2): LayerNorm((256,), eps=1e-06, elementwise_affine=True)
+          (mlp): Mlp(
+            (fc1): Linear(in_features=256, out_features=1024, bias=True)
+            (act): GELU(approximate='none')
+            (fc2): Linear(in_features=1024, out_features=256, bias=True)
+            (drop): Dropout(p=0, inplace=False)
+          )
+        )
+      )
+      (attnen): AttentionTail(
+        (q): Linear(in_features=256, out_features=256, bias=True)
+        (k): Linear(in_features=256, out_features=256, bias=True)
+        (linear_l1): Sequential(
+          (0): Linear(in_features=8, out_features=8, bias=True)
+          (1): ReLU()
+        )
+        (linear): Sequential(
+          (0): Linear(in_features=8, out_features=1, bias=True)
+          (1): ReLU()
+        )
+      )
+    )
+    (stuff_mask_head): SegMaskHead(
+      (blocks): ModuleList(
+        (0-5): 6 x Block(
+          (head_norm1): LayerNorm((256,), eps=1e-06, elementwise_affine=True)
+          (attn): Attention(
+            (q): Linear(in_features=256, out_features=256, bias=True)
+            (k): Linear(in_features=256, out_features=256, bias=True)
+            (v): Linear(in_features=256, out_features=256, bias=True)
+            (attn_drop): Dropout(p=0, inplace=False)
+            (proj): Linear(in_features=256, out_features=256, bias=True)
+            (proj_drop): Dropout(p=0, inplace=False)
+            (linear_l1): Sequential(
+              (0): Linear(in_features=8, out_features=8, bias=True)
+              (1): ReLU()
+            )
+            (linear): Sequential(
+              (0): Linear(in_features=8, out_features=1, bias=True)
+              (1): ReLU()
+            )
+          )
+          (drop_path): Identity()
+          (head_norm2): LayerNorm((256,), eps=1e-06, elementwise_affine=True)
+          (mlp): Mlp(
+            (fc1): Linear(in_features=256, out_features=1024, bias=True)
+            (act): GELU(approximate='none')
+            (fc2): Linear(in_features=1024, out_features=256, bias=True)
+            (drop): Dropout(p=0, inplace=False)
+          )
+          (self_attention): SelfAttention(
+            (qkv): Linear(in_features=256, out_features=768, bias=True)
+            (attn_drop): Dropout(p=0, inplace=False)
+            (proj): Linear(in_features=256, out_features=256, bias=True)
+            (proj_drop): Dropout(p=0, inplace=False)
+          )
+          (norm3): LayerNorm((256,), eps=1e-06, elementwise_affine=True)
+        )
+      )
+      (attnen): AttentionTail(
+        (q): Linear(in_features=256, out_features=256, bias=True)
+        (k): Linear(in_features=256, out_features=256, bias=True)
+        (linear_l1): Sequential(
+          (0): Linear(in_features=8, out_features=8, bias=True)
+          (1): ReLU()
+        )
+        (linear): Sequential(
+          (0): Linear(in_features=8, out_features=1, bias=True)
+          (1): ReLU()
+        )
+      )
+    )
+  )
+  (occ_head): OccHead(
+    (bev_sampler): BevFeatureSlicer()
+    (bev_light_proj): SimpleConv2d(
+      (conv_layers): Sequential(
+        (0): ConvModule(
+          (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (activate): ReLU(inplace=True)
+        )
+        (1): ConvModule(
+          (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (activate): ReLU(inplace=True)
+        )
+        (2): ConvModule(
+          (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (activate): ReLU(inplace=True)
+        )
+        (3): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+    )
+    init_cfg={'type': 'Kaiming', 'layer': 'Conv2d'}
+    (base_downscale): Sequential(
+      (0): Bottleneck(
+        (layers): Sequential(
+          (conv_down_project): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (abn_down_project): Sequential(
+            (0): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (1): ReLU(inplace=True)
+          )
+          (conv): Conv2d(128, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (abn): Sequential(
+            (0): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (1): ReLU(inplace=True)
+          )
+          (conv_up_project): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (abn_up_project): Sequential(
+            (0): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (1): ReLU(inplace=True)
+          )
+          (dropout): Dropout2d(p=0.0, inplace=False)
+        )
+        (projection): Sequential(
+          (upsample_skip_proj): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+          (conv_skip_proj): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn_skip_proj): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (1): Bottleneck(
+        (layers): Sequential(
+          (conv_down_project): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (abn_down_project): Sequential(
+            (0): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (1): ReLU(inplace=True)
+          )
+          (conv): Conv2d(128, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (abn): Sequential(
+            (0): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (1): ReLU(inplace=True)
+          )
+          (conv_up_project): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (abn_up_project): Sequential(
+            (0): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (1): ReLU(inplace=True)
+          )
+          (dropout): Dropout2d(p=0.0, inplace=False)
+        )
+        (projection): Sequential(
+          (upsample_skip_proj): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+          (conv_skip_proj): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn_skip_proj): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+    )
+    (transformer_decoder): DetrTransformerDecoder(
+      (layers): ModuleList(
+        (0-4): 5 x DetrTransformerDecoderLayer(
+          (attentions): ModuleList(
+            (0-1): 2 x MultiheadAttention(
+              (attn): MultiheadAttention(
+                (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+              )
+              (proj_drop): Dropout(p=0.0, inplace=False)
+              (dropout_layer): Identity()
+            )
+          )
+          (ffns): ModuleList(
+            (0): FFN(
+              (activate): ReLU(inplace=True)
+              (layers): Sequential(
+                (0): Sequential(
+                  (0): Linear(in_features=256, out_features=2048, bias=True)
+                  (1): ReLU(inplace=True)
+                  (2): Dropout(p=0.0, inplace=False)
+                )
+                (1): Linear(in_features=2048, out_features=256, bias=True)
+                (2): Dropout(p=0.0, inplace=False)
+              )
+              (dropout_layer): Identity()
+            )
+          )
+          (norms): ModuleList(
+            (0-2): 3 x LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          )
+        )
+      )
+      (post_norm): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    )
+    (temporal_mlps): ModuleList(
+      (0-4): 5 x MLP(
+        (layers): ModuleList(
+          (0-1): 2 x Linear(in_features=256, out_features=256, bias=True)
+        )
+      )
+    )
+    (downscale_convs): ModuleList(
+      (0-4): 5 x Bottleneck(
+        (layers): Sequential(
+          (conv_down_project): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (abn_down_project): Sequential(
+            (0): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (1): ReLU(inplace=True)
+          )
+          (conv): Conv2d(128, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (abn): Sequential(
+            (0): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (1): ReLU(inplace=True)
+          )
+          (conv_up_project): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (abn_up_project): Sequential(
+            (0): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (1): ReLU(inplace=True)
+          )
+          (dropout): Dropout2d(p=0.0, inplace=False)
+        )
+        (projection): Sequential(
+          (upsample_skip_proj): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+          (conv_skip_proj): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn_skip_proj): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+    )
+    (upsample_adds): ModuleList(
+      (0-4): 5 x UpsamplingAdd(
+        (upsample_layer): Sequential(
+          (0): Upsample(scale_factor=2.0, mode='bilinear')
+          (1): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+    )
+    (dense_decoder): CVT_Decoder(
+      (layers): Sequential(
+        (0): CVT_DecoderBlock(
+          (conv): Sequential(
+            (0): Upsample(scale_factor=2.0, mode='bilinear')
+            (1): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (3): ReLU(inplace=True)
+            (4): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (5): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          )
+          (up): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (relu): ReLU(inplace=True)
+        )
+        (1): CVT_DecoderBlock(
+          (conv): Sequential(
+            (0): Upsample(scale_factor=2.0, mode='bilinear')
+            (1): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (3): ReLU(inplace=True)
+            (4): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (5): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          )
+          (up): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+        )
+      )
+    )
+    init_cfg={'type': 'Kaiming', 'layer': 'Conv2d'}
+    (mode_fuser): Sequential(
+      (0): Linear(in_features=256, out_features=256, bias=True)
+      (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      (2): ReLU(inplace=True)
+    )
+    (multi_query_fuser): Sequential(
+      (0): Linear(in_features=768, out_features=512, bias=True)
+      (1): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
+      (2): ReLU(inplace=True)
+      (3): Linear(in_features=512, out_features=256, bias=True)
+    )
+    (query_to_occ_feat): MLP(
+      (layers): ModuleList(
+        (0-2): 3 x Linear(in_features=256, out_features=256, bias=True)
+      )
+    )
+    (temporal_mlp_for_mask): MLP(
+      (layers): ModuleList(
+        (0-2): 3 x Linear(in_features=256, out_features=256, bias=True)
+      )
+    )
+    (loss_dice): DiceLossWithMasks()
+    (loss_mask): FieryBinarySegmentationLoss()
+  )
+  (motion_head): MotionHead(
+    (loss_traj): TrajLoss()
+    (unflatten_traj): Unflatten(dim=3, unflattened_size=(12, 5))
+    (log_softmax): LogSoftmax(dim=2)
+    (learnable_motion_query_embedding): Embedding(24, 256)
+    (motionformer): MotionTransformerDecoder(
+      (intention_interaction_layers): IntentionInteraction(
+        (interaction_transformer): TransformerEncoderLayer(
+          (self_attn): MultiheadAttention(
+            (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+          )
+          (linear1): Linear(in_features=256, out_features=512, bias=True)
+          (dropout): Dropout(p=0.1, inplace=False)
+          (linear2): Linear(in_features=512, out_features=256, bias=True)
+          (norm1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (norm2): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (dropout1): Dropout(p=0.1, inplace=False)
+          (dropout2): Dropout(p=0.1, inplace=False)
+        )
+      )
+      (track_agent_interaction_layers): ModuleList(
+        (0-2): 3 x TrackAgentInteraction(
+          (interaction_transformer): TransformerDecoderLayer(
+            (self_attn): MultiheadAttention(
+              (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+            )
+            (multihead_attn): MultiheadAttention(
+              (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+            )
+            (linear1): Linear(in_features=256, out_features=512, bias=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+            (linear2): Linear(in_features=512, out_features=256, bias=True)
+            (norm1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (norm2): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (norm3): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout1): Dropout(p=0.1, inplace=False)
+            (dropout2): Dropout(p=0.1, inplace=False)
+            (dropout3): Dropout(p=0.1, inplace=False)
+          )
+        )
+      )
+      (map_interaction_layers): ModuleList(
+        (0-2): 3 x MapInteraction(
+          (interaction_transformer): TransformerDecoderLayer(
+            (self_attn): MultiheadAttention(
+              (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+            )
+            (multihead_attn): MultiheadAttention(
+              (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+            )
+            (linear1): Linear(in_features=256, out_features=512, bias=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+            (linear2): Linear(in_features=512, out_features=256, bias=True)
+            (norm1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (norm2): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (norm3): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout1): Dropout(p=0.1, inplace=False)
+            (dropout2): Dropout(p=0.1, inplace=False)
+            (dropout3): Dropout(p=0.1, inplace=False)
+          )
+        )
+      )
+      (bev_interaction_layers): ModuleList(
+        (0-2): 3 x MotionTransformerAttentionLayer(
+          (attentions): ModuleList(
+            (0): MotionDeformableAttention(
+              (dropout): Dropout(p=0.1, inplace=False)
+              (sampling_offsets): Linear(in_features=256, out_features=768, bias=True)
+              (attention_weights): Linear(in_features=256, out_features=384, bias=True)
+              (value_proj): Linear(in_features=256, out_features=256, bias=True)
+              (output_proj): Sequential(
+                (0): Linear(in_features=3072, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): ReLU(inplace=True)
+              )
+            )
+          )
+          (ffns): ModuleList(
+            (0): FFN(
+              (activate): ReLU(inplace=True)
+              (layers): Sequential(
+                (0): Sequential(
+                  (0): Linear(in_features=256, out_features=512, bias=True)
+                  (1): ReLU(inplace=True)
+                  (2): Dropout(p=0.1, inplace=False)
+                )
+                (1): Linear(in_features=512, out_features=256, bias=True)
+                (2): Dropout(p=0.1, inplace=False)
+              )
+              (dropout_layer): Identity()
+            )
+          )
+          (norms): ModuleList(
+            (0-1): 2 x LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          )
+        )
+      )
+      (static_dynamic_fuser): Sequential(
+        (0): Linear(in_features=512, out_features=512, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=512, out_features=256, bias=True)
+      )
+      (dynamic_embed_fuser): Sequential(
+        (0): Linear(in_features=768, out_features=512, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=512, out_features=256, bias=True)
+      )
+      (in_query_fuser): Sequential(
+        (0): Linear(in_features=512, out_features=512, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=512, out_features=256, bias=True)
+      )
+      (out_query_fuser): Sequential(
+        (0): Linear(in_features=1024, out_features=512, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=512, out_features=256, bias=True)
+      )
+    )
+    (layer_track_query_fuser): Sequential(
+      (0): Linear(in_features=1536, out_features=256, bias=True)
+      (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      (2): ReLU(inplace=True)
+    )
+    (agent_level_embedding_layer): Sequential(
+      (0): Linear(in_features=256, out_features=512, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=512, out_features=256, bias=True)
+    )
+    (scene_level_ego_embedding_layer): Sequential(
+      (0): Linear(in_features=256, out_features=512, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=512, out_features=256, bias=True)
+    )
+    (scene_level_offset_embedding_layer): Sequential(
+      (0): Linear(in_features=256, out_features=512, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=512, out_features=256, bias=True)
+    )
+    (boxes_query_embedding_layer): Sequential(
+      (0): Linear(in_features=256, out_features=512, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=512, out_features=256, bias=True)
+    )
+    (traj_cls_branches): ModuleList(
+      (0-2): 3 x Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (2): ReLU(inplace=True)
+        (3): Linear(in_features=256, out_features=256, bias=True)
+        (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (5): ReLU(inplace=True)
+        (6): Linear(in_features=256, out_features=1, bias=True)
+      )
+    )
+    (traj_reg_branches): ModuleList(
+      (0-2): 3 x Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=256, out_features=256, bias=True)
+        (3): ReLU()
+        (4): Linear(in_features=256, out_features=60, bias=True)
+      )
+    )
+  )
+  (planning_head): PlanningHeadSingleMode(
+    (navi_embed): Embedding(3, 256)
+    (reg_branch): Sequential(
+      (0): Linear(in_features=256, out_features=256, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=256, out_features=12, bias=True)
+    )
+    (loss_planning): PlanningLoss()
+    (attn_module): TransformerDecoder(
+      (layers): ModuleList(
+        (0-2): 3 x TransformerDecoderLayer(
+          (self_attn): MultiheadAttention(
+            (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+          )
+          (multihead_attn): MultiheadAttention(
+            (out_proj): NonDynamicallyQuantizableLinear(in_features=256, out_features=256, bias=True)
+          )
+          (linear1): Linear(in_features=256, out_features=512, bias=True)
+          (dropout): Dropout(p=0.1, inplace=False)
+          (linear2): Linear(in_features=512, out_features=256, bias=True)
+          (norm1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (norm2): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (norm3): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (dropout1): Dropout(p=0.1, inplace=False)
+          (dropout2): Dropout(p=0.1, inplace=False)
+          (dropout3): Dropout(p=0.1, inplace=False)
+        )
+      )
+    )
+    (mlp_fuser): Sequential(
+      (0): Linear(in_features=768, out_features=256, bias=True)
+      (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      (2): ReLU(inplace=True)
+    )
+    (pos_embed): Embedding(1, 256)
+    (loss_collision): ModuleList(
+      (0-2): 3 x CollisionLoss()
+    )
+    (bev_adapter): Sequential(
+      (0): Sequential(
+        (0): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (1): ReLU()
+        (2): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (1): Sequential(
+        (0): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (1): ReLU()
+        (2): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (2): Sequential(
+        (0): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (1): ReLU()
+        (2): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+    )
+  )
+)
+======
+Loading NuScenes tables for version v1.0-trainval...
+======
+Loading NuScenes tables for version v1.0-trainval...
+======
+Loading NuScenes tables for version v1.0-trainval...
+======
+Loading NuScenes tables for version v1.0-trainval...
+======
+Loading NuScenes tables for version v1.0-trainval...
+======
+Loading NuScenes tables for version v1.0-trainval...
+======
+Loading NuScenes tables for version v1.0-trainval...
+======
+Loading NuScenes tables for version v1.0-trainval...
+23 category,
+8 attribute,
+4 visibility,
+64386 instance,
+12 sensor,
+10200 calibrated_sensor,
+2631083 ego_pose,
+68 log,
+850 scene,
+34149 sample,
+2631083 sample_data,
+1166187 sample_annotation,
+4 map,
+Done loading in 36.593 seconds.
+======
+Reverse indexing ...
+23 category,
+8 attribute,
+4 visibility,
+64386 instance,
+12 sensor,
+10200 calibrated_sensor,
+2631083 ego_pose,
+68 log,
+850 scene,
+34149 sample,
+2631083 sample_data,
+1166187 sample_annotation,
+4 map,
+Done loading in 36.845 seconds.
+======
+Reverse indexing ...
+23 category,
+8 attribute,
+4 visibility,
+64386 instance,
+12 sensor,
+10200 calibrated_sensor,
+2631083 ego_pose,
+68 log,
+850 scene,
+34149 sample,
+2631083 sample_data,
+1166187 sample_annotation,
+4 map,
+Done loading in 36.883 seconds.
+======
+Reverse indexing ...
+23 category,
+8 attribute,
+4 visibility,
+64386 instance,
+12 sensor,
+10200 calibrated_sensor,
+2631083 ego_pose,
+68 log,
+850 scene,
+34149 sample,
+2631083 sample_data,
+1166187 sample_annotation,
+4 map,
+Done loading in 37.303 seconds.
+======
+Reverse indexing ...
+23 category,
+8 attribute,
+4 visibility,
+64386 instance,
+12 sensor,
+10200 calibrated_sensor,
+2631083 ego_pose,
+68 log,
+850 scene,
+34149 sample,
+2631083 sample_data,
+1166187 sample_annotation,
+4 map,
+Done loading in 37.170 seconds.
+======
+Reverse indexing ...
+23 category,
+8 attribute,
+4 visibility,
+64386 instance,
+12 sensor,
+10200 calibrated_sensor,
+2631083 ego_pose,
+68 log,
+850 scene,
+34149 sample,
+2631083 sample_data,
+1166187 sample_annotation,
+4 map,
+Done loading in 38.225 seconds.
+======
+Reverse indexing ...
+23 category,
+8 attribute,
+4 visibility,
+64386 instance,
+12 sensor,
+10200 calibrated_sensor,
+2631083 ego_pose,
+68 log,
+850 scene,
+34149 sample,
+2631083 sample_data,
+1166187 sample_annotation,
+4 map,
+Done loading in 37.480 seconds.
+======
+Reverse indexing ...
+23 category,
+8 attribute,
+4 visibility,
+64386 instance,
+12 sensor,
+10200 calibrated_sensor,
+2631083 ego_pose,
+68 log,
+850 scene,
+34149 sample,
+2631083 sample_data,
+1166187 sample_annotation,
+4 map,
+Done loading in 37.675 seconds.
+======
+Reverse indexing ...
+Done reverse indexing in 7.2 seconds.
+======
+Done reverse indexing in 7.1 seconds.
+======
+Done reverse indexing in 7.7 seconds.
+======
+Done reverse indexing in 7.4 seconds.
+======
+Done reverse indexing in 7.5 seconds.
+======
+Done reverse indexing in 7.7 seconds.
+======
+Done reverse indexing in 7.6 seconds.
+======
+Done reverse indexing in 8.2 seconds.
+======
+[rank5]: Traceback (most recent call last):
+[rank5]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 69, in build_from_cfg
+[rank5]:     return obj_cls(**args)
+[rank5]: TypeError: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+
+[rank5]: During handling of the above exception, another exception occurred:
+
+[rank5]: Traceback (most recent call last):
+[rank5]:   File "/home/UniAD/tools/train.py", line 255, in <module>
+[rank5]:     main()
+[rank5]:   File "/home/UniAD/tools/train.py", line 242, in main
+[rank5]:     custom_train_model(
+[rank5]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/train.py", line 21, in custom_train_model
+[rank5]:     custom_train_detector(
+[rank5]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 52, in custom_train_detector
+[rank5]:     data_loaders = [
+[rank5]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 53, in <listcomp>
+[rank5]:     build_dataloader(
+[rank5]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/builder.py", line 51, in build_dataloader
+[rank5]:     sampler = build_sampler(shuffler_sampler if shuffler_sampler is not None else dict(type='DistributedGroupSampler'),
+[rank5]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/samplers/sampler.py", line 7, in build_sampler
+[rank5]:     return build_from_cfg(cfg, SAMPLER, default_args)
+[rank5]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 72, in build_from_cfg
+[rank5]:     raise type(e)(f'{obj_cls.__name__}: {e}')
+[rank5]: TypeError: DistributedSampler: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 69, in build_from_cfg
+[rank1]:     return obj_cls(**args)
+[rank1]: TypeError: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+
+[rank1]: During handling of the above exception, another exception occurred:
+
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/UniAD/tools/train.py", line 255, in <module>
+[rank1]:     main()
+[rank1]:   File "/home/UniAD/tools/train.py", line 242, in main
+[rank1]:     custom_train_model(
+[rank1]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/train.py", line 21, in custom_train_model
+[rank1]:     custom_train_detector(
+[rank1]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 52, in custom_train_detector
+[rank1]:     data_loaders = [
+[rank1]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 53, in <listcomp>
+[rank1]:     build_dataloader(
+[rank1]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/builder.py", line 51, in build_dataloader
+[rank1]:     sampler = build_sampler(shuffler_sampler if shuffler_sampler is not None else dict(type='DistributedGroupSampler'),
+[rank1]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/samplers/sampler.py", line 7, in build_sampler
+[rank1]:     return build_from_cfg(cfg, SAMPLER, default_args)
+[rank1]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 72, in build_from_cfg
+[rank1]:     raise type(e)(f'{obj_cls.__name__}: {e}')
+[rank1]: TypeError: DistributedSampler: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 69, in build_from_cfg
+[rank6]:     return obj_cls(**args)
+[rank6]: TypeError: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+
+[rank6]: During handling of the above exception, another exception occurred:
+
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "/home/UniAD/tools/train.py", line 255, in <module>
+[rank6]:     main()
+[rank6]:   File "/home/UniAD/tools/train.py", line 242, in main
+[rank6]:     custom_train_model(
+[rank6]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/train.py", line 21, in custom_train_model
+[rank6]:     custom_train_detector(
+[rank6]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 52, in custom_train_detector
+[rank6]:     data_loaders = [
+[rank6]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 53, in <listcomp>
+[rank6]:     build_dataloader(
+[rank6]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/builder.py", line 51, in build_dataloader
+[rank6]:     sampler = build_sampler(shuffler_sampler if shuffler_sampler is not None else dict(type='DistributedGroupSampler'),
+[rank6]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/samplers/sampler.py", line 7, in build_sampler
+[rank6]:     return build_from_cfg(cfg, SAMPLER, default_args)
+[rank6]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 72, in build_from_cfg
+[rank6]:     raise type(e)(f'{obj_cls.__name__}: {e}')
+[rank6]: TypeError: DistributedSampler: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 69, in build_from_cfg
+[rank0]:     return obj_cls(**args)
+[rank0]: TypeError: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+
+[rank0]: During handling of the above exception, another exception occurred:
+
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/UniAD/tools/train.py", line 255, in <module>
+[rank0]:     main()
+[rank0]:   File "/home/UniAD/tools/train.py", line 242, in main
+[rank0]:     custom_train_model(
+[rank0]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/train.py", line 21, in custom_train_model
+[rank0]:     custom_train_detector(
+[rank0]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 52, in custom_train_detector
+[rank0]:     data_loaders = [
+[rank0]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 53, in <listcomp>
+[rank0]:     build_dataloader(
+[rank0]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/builder.py", line 51, in build_dataloader
+[rank0]:     sampler = build_sampler(shuffler_sampler if shuffler_sampler is not None else dict(type='DistributedGroupSampler'),
+[rank0]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/samplers/sampler.py", line 7, in build_sampler
+[rank0]:     return build_from_cfg(cfg, SAMPLER, default_args)
+[rank0]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 72, in build_from_cfg
+[rank0]:     raise type(e)(f'{obj_cls.__name__}: {e}')
+[rank0]: TypeError: DistributedSampler: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+[rank4]: Traceback (most recent call last):
+[rank4]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 69, in build_from_cfg
+[rank4]:     return obj_cls(**args)
+[rank4]: TypeError: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+
+[rank4]: During handling of the above exception, another exception occurred:
+
+[rank4]: Traceback (most recent call last):
+[rank4]:   File "/home/UniAD/tools/train.py", line 255, in <module>
+[rank4]:     main()
+[rank4]:   File "/home/UniAD/tools/train.py", line 242, in main
+[rank4]:     custom_train_model(
+[rank4]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/train.py", line 21, in custom_train_model
+[rank4]:     custom_train_detector(
+[rank4]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 52, in custom_train_detector
+[rank4]:     data_loaders = [
+[rank4]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 53, in <listcomp>
+[rank4]:     build_dataloader(
+[rank4]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/builder.py", line 51, in build_dataloader
+[rank4]:     sampler = build_sampler(shuffler_sampler if shuffler_sampler is not None else dict(type='DistributedGroupSampler'),
+[rank4]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/samplers/sampler.py", line 7, in build_sampler
+[rank4]:     return build_from_cfg(cfg, SAMPLER, default_args)
+[rank4]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 72, in build_from_cfg
+[rank4]:     raise type(e)(f'{obj_cls.__name__}: {e}')
+[rank4]: TypeError: DistributedSampler: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+[rank7]: Traceback (most recent call last):
+[rank7]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 69, in build_from_cfg
+[rank7]:     return obj_cls(**args)
+[rank7]: TypeError: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+
+[rank7]: During handling of the above exception, another exception occurred:
+
+[rank7]: Traceback (most recent call last):
+[rank7]:   File "/home/UniAD/tools/train.py", line 255, in <module>
+[rank7]:     main()
+[rank7]:   File "/home/UniAD/tools/train.py", line 242, in main
+[rank7]:     custom_train_model(
+[rank7]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/train.py", line 21, in custom_train_model
+[rank7]:     custom_train_detector(
+[rank7]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 52, in custom_train_detector
+[rank7]:     data_loaders = [
+[rank7]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 53, in <listcomp>
+[rank7]:     build_dataloader(
+[rank7]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/builder.py", line 51, in build_dataloader
+[rank7]:     sampler = build_sampler(shuffler_sampler if shuffler_sampler is not None else dict(type='DistributedGroupSampler'),
+[rank7]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/samplers/sampler.py", line 7, in build_sampler
+[rank7]:     return build_from_cfg(cfg, SAMPLER, default_args)
+[rank7]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 72, in build_from_cfg
+[rank7]:     raise type(e)(f'{obj_cls.__name__}: {e}')
+[rank7]: TypeError: DistributedSampler: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 69, in build_from_cfg
+[rank2]:     return obj_cls(**args)
+[rank2]: TypeError: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+
+[rank2]: During handling of the above exception, another exception occurred:
+
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/UniAD/tools/train.py", line 255, in <module>
+[rank2]:     main()
+[rank2]:   File "/home/UniAD/tools/train.py", line 242, in main
+[rank2]:     custom_train_model(
+[rank2]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/train.py", line 21, in custom_train_model
+[rank2]:     custom_train_detector(
+[rank2]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 52, in custom_train_detector
+[rank2]:     data_loaders = [
+[rank2]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 53, in <listcomp>
+[rank2]:     build_dataloader(
+[rank2]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/builder.py", line 51, in build_dataloader
+[rank2]:     sampler = build_sampler(shuffler_sampler if shuffler_sampler is not None else dict(type='DistributedGroupSampler'),
+[rank2]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/samplers/sampler.py", line 7, in build_sampler
+[rank2]:     return build_from_cfg(cfg, SAMPLER, default_args)
+[rank2]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 72, in build_from_cfg
+[rank2]:     raise type(e)(f'{obj_cls.__name__}: {e}')
+[rank2]: TypeError: DistributedSampler: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 69, in build_from_cfg
+[rank3]:     return obj_cls(**args)
+[rank3]: TypeError: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+
+[rank3]: During handling of the above exception, another exception occurred:
+
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/UniAD/tools/train.py", line 255, in <module>
+[rank3]:     main()
+[rank3]:   File "/home/UniAD/tools/train.py", line 242, in main
+[rank3]:     custom_train_model(
+[rank3]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/train.py", line 21, in custom_train_model
+[rank3]:     custom_train_detector(
+[rank3]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 52, in custom_train_detector
+[rank3]:     data_loaders = [
+[rank3]:   File "/home/UniAD/projects/mmdet3d_plugin/uniad/apis/mmdet_train.py", line 53, in <listcomp>
+[rank3]:     build_dataloader(
+[rank3]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/builder.py", line 51, in build_dataloader
+[rank3]:     sampler = build_sampler(shuffler_sampler if shuffler_sampler is not None else dict(type='DistributedGroupSampler'),
+[rank3]:   File "/home/UniAD/projects/mmdet3d_plugin/datasets/samplers/sampler.py", line 7, in build_sampler
+[rank3]:     return build_from_cfg(cfg, SAMPLER, default_args)
+[rank3]:   File "/home/repositories/mmcv/mmcv/utils/registry.py", line 72, in build_from_cfg
+[rank3]:     raise type(e)(f'{obj_cls.__name__}: {e}')
+[rank3]: TypeError: DistributedSampler: DistributedSampler.__init__() got an unexpected keyword argument 'samples_per_gpu'
+[rank0]:[W421 15:14:05.546054612 ProcessGroupMCCL.cpp:1095] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W0421 15:14:15.045000 289999 torch/distributed/elastic/multiprocessing/api.py:900] Sending process 290631 closing signal SIGTERM
+W0421 15:14:15.046000 289999 torch/distributed/elastic/multiprocessing/api.py:900] Sending process 290640 closing signal SIGTERM
+W0421 15:14:15.047000 289999 torch/distributed/elastic/multiprocessing/api.py:900] Sending process 290645 closing signal SIGTERM
+W0421 15:14:15.047000 289999 torch/distributed/elastic/multiprocessing/api.py:900] Sending process 290650 closing signal SIGTERM
+W0421 15:14:15.048000 289999 torch/distributed/elastic/multiprocessing/api.py:900] Sending process 290658 closing signal SIGTERM
+W0421 15:14:15.048000 289999 torch/distributed/elastic/multiprocessing/api.py:900] Sending process 290670 closing signal SIGTERM
+W0421 15:14:15.048000 289999 torch/distributed/elastic/multiprocessing/api.py:900] Sending process 290676 closing signal SIGTERM
+E0421 15:14:15.946000 289999 torch/distributed/elastic/multiprocessing/api.py:874] failed (exitcode: 1) local_rank: 5 (pid: 290663) of binary: /usr/bin/python
+Traceback (most recent call last):
+  File "/usr/local/bin/torchrun", line 7, in <module>
+    sys.exit(main())
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributed/run.py", line 892, in main
+    run(args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributed/run.py", line 883, in run
+    elastic_launch(
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributed/launcher/api.py", line 139, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributed/launcher/api.py", line 270, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+tools/train.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-04-21_15:14:15
+  host      : mccx-191
+  rank      : 5 (local_rank: 5)
+  exitcode  : 1 (pid: 290663)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

@@ -21,6 +21,7 @@ from mmdet3d.models import build_model
 from mmdet3d.utils import collect_env, get_root_logger
 from mmdet.apis import set_random_seed
 from mmseg import __version__ as mmseg_version
+from torch_musa.utils.compare_tool import NanInfTracker
 
 warnings.filterwarnings("ignore")
 
