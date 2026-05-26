@@ -41,27 +41,45 @@ class CollisionLoss(nn.Module):
         # future_gt_bbox 6x[lidarboxinstance]
         n_futures = len(future_gt_bbox)
         inter_sum = sdc_traj_all.new_zeros(1, )
-        dump_sdc = []
         for i in range(n_futures):
             if len(future_gt_bbox[i].tensor) > 0:
                 future_gt_bbox_corners = future_gt_bbox[i].corners[:, [0,3,4,7], :2] # (N, 8, 3) -> (N, 4, 2) only bev 
                 # sdc_yaw = -sdc_planning_gt[0, i, 2].to(sdc_traj_all.dtype) - 1.5708
                 sdc_yaw = sdc_planning_gt[0, i, 2].to(sdc_traj_all.dtype)
                 sdc_bev_box = self.to_corners([sdc_traj_all[0, i, 0], sdc_traj_all[0, i, 1], self.w, self.h, sdc_yaw])  
-                dump_sdc.append(sdc_bev_box.cpu().detach().numpy())
                 for j in range(future_gt_bbox_corners.shape[0]):
                     inter_sum += self.inter_bbox(sdc_bev_box, future_gt_bbox_corners[j].to(sdc_traj_all.device))  
         return inter_sum * self.weight
         
     def inter_bbox(self, corners_a, corners_b):
-        xa1, ya1 = torch.max(corners_a[:, 0]), torch.max(corners_a[:, 1])
-        xa2, ya2 = torch.min(corners_a[:, 0]), torch.min(corners_a[:, 1])
-        xb1, yb1 = torch.max(corners_b[:, 0]), torch.max(corners_b[:, 1])
-        xb2, yb2 = torch.min(corners_b[:, 0]), torch.min(corners_b[:, 1])
-        
-        xi1, yi1 = min(xa1, xb1), min(ya1, yb1)
-        xi2, yi2 = max(xa2, xb2), max(ya2, yb2)
-        intersect = max((xi1 - xi2), xi1.new_zeros(1, ).to(xi1.device)) * max((yi1 - yi2), xi1.new_zeros(1,).to(xi1.device))
+        # Optimization principle:
+        # This implementation computes the min/max bounds of each box along all coordinate
+        # dimensions at once, instead of manually slicing and reducing x/y coordinates one
+        # by one. By using vectorized tensor reductions and elementwise operations, it
+        # reduces repeated Python-level indexing, duplicated reduction calls, and temporary
+        # scalar tensor operations. The intersection box is derived from the smaller upper
+        # bound and the larger lower bound, then negative side lengths are clamped to zero
+        # before multiplying all dimensions. This makes the code faster, cleaner, and
+        # naturally extensible to higher-dimensional bounding boxes.
+        a_max = corners_a.max(dim=0).values
+        a_min = corners_a.min(dim=0).values
+        b_max = corners_b.max(dim=0).values
+        b_min = corners_b.min(dim=0).values
+
+        inter_max = torch.minimum(a_max, b_max)
+        inter_min = torch.maximum(a_min, b_min)
+        inter_wh = (inter_max - inter_min).clamp(min=0)
+        intersect = inter_wh.prod()
+
+        # The code above is the optimized version, and the code below is the original version.
+        #xa1, ya1 = torch.max(corners_a[:, 0]), torch.max(corners_a[:, 1])
+        #xa2, ya2 = torch.min(corners_a[:, 0]), torch.min(corners_a[:, 1])
+        #xb1, yb1 = torch.max(corners_b[:, 0]), torch.max(corners_b[:, 1])
+        #xb2, yb2 = torch.min(corners_b[:, 0]), torch.min(corners_b[:, 1])
+        #
+        #xi1, yi1 = torch.minimum(xa1, xb1), torch.minimum(ya1, yb1)
+        #xi2, yi2 = torch.maximum(xa2, xb2), torch.maximum(ya2, yb2)
+        #intersect = torch.clamp((xi1 - xi2), min=0) * torch.clamp((yi1 - yi2), min=0)
         return intersect
 
     def to_corners(self, bbox):

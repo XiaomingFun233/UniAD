@@ -386,20 +386,30 @@ class ClipMatcher(nn.Module):
         }
         # step1. inherit and update the previous tracks.
         num_disappear_track = 0
+        # NOTE(caizhi):  Frequent element indexing on MUSA GPU tensors and repeated `.item()` calls are time-consuming; it is more performant to handle everything with NumPy on CPU. There may be room for further optimization on the MUSA GPU to achieve better performance.
+        cpu_track_instances_obj_idxes_numpy = track_instances.obj_idxes.detach().cpu().numpy()
+        cpu_track_instances_obj_idxes = cpu_track_instances_obj_idxes_numpy.tolist()
+        np_dtype = cpu_track_instances_obj_idxes_numpy.dtype
+        cpu_matched_gt_idxes = np.full(track_instances.matched_gt_idxes.shape[0], -1, dtype=np_dtype)
         for j in range(len(track_instances)):
-            obj_id = track_instances.obj_idxes[j].item()
+            #obj_id = track_instances.obj_idxes[j].item()
+            obj_id = cpu_track_instances_obj_idxes[j]
             # set new target idx.
             if obj_id >= 0:
                 if obj_id in obj_idx_to_gt_idx:
-                    track_instances.matched_gt_idxes[j] = obj_idx_to_gt_idx[
-                        obj_id]
+                    #track_instances.matched_gt_idxes[j] = obj_idx_to_gt_idx[
+                    #    obj_id]
+                    cpu_matched_gt_idxes[j] = obj_idx_to_gt_idx[obj_id]
                 else:
                     num_disappear_track += 1
-                    track_instances.matched_gt_idxes[
-                        j] = -1  # track-disappear case.
+                    #track_instances.matched_gt_idxes[
+                    #    j] = -1  # track-disappear case.
+                    cpu_matched_gt_idxes[j] = -1
             else:
-                track_instances.matched_gt_idxes[j] = -1
-
+                #track_instances.matched_gt_idxes[j] = -1
+                cpu_matched_gt_idxes[j] = -1
+        target_device = track_instances.matched_gt_idxes.device
+        track_instances.matched_gt_idxes = torch.tensor(cpu_matched_gt_idxes, device=target_device)
         full_track_idxes = torch.arange(
             len(track_instances), dtype=torch.long).to(pred_logits_i.device)
         # previsouly tracked, which is matched by rule

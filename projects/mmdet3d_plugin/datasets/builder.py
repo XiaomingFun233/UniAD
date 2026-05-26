@@ -86,7 +86,7 @@ def build_dataloader(dataset,
         sampler=sampler,
         num_workers=num_workers,
         collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
-        pin_memory=False,
+        pin_memory=True, # TODO: 这里设置了pin_memory,但是trace上没有生效
         worker_init_fn=init_fn,
         **kwargs)
 

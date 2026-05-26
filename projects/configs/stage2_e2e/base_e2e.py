@@ -667,7 +667,7 @@ data = dict(
         eval_mod=['det', 'map', 'track','motion'],
     ),
     shuffler_sampler=dict(type='DistributedGroupSampler'),
-    nonshuffler_sampler=dict(type='DistributedSampler', shuffle=False),
+    nonshuffler_sampler=dict(type='DistributedSampler'),
 )
 optimizer = dict(
     type="AdamW",
@@ -696,14 +696,14 @@ evaluation = dict(
 )
 runner = dict(type="EpochBasedRunner", max_epochs=total_epochs)
 log_config = dict(
-    interval=1, hooks=[dict(type="TextLoggerHook"), dict(type="TensorboardLoggerHook")]
+    interval=10, hooks=[dict(type="TextLoggerHook"), dict(type="TensorboardLoggerHook")]
 )
 # Save checkpoint every 100 iterations to capture steps ~500 and ~900
 # This ensures checkpoints at 500, 600, 700, 800, 900, 1000, etc.
 # max_keep_ckpts=5 limits disk usage by keeping only recent 5 checkpoints
 # NOTE: filename_tmpl must be set explicitly, otherwise mmcv defaults to epoch_{}.pth
 checkpoint_config = dict(
-    interval=100,
+    interval=500,
     by_epoch=False,
     max_keep_ckpts=5,
     filename_tmpl='iter_{}.pth')

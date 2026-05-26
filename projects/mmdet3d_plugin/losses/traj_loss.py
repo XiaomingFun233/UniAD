@@ -114,65 +114,8 @@ def min_ade(traj: torch.Tensor, traj_gt: torch.Tensor,
     err = torch.pow(err, exponent=2)
     err = torch.sum(err, dim=3)
     err = torch.pow(err, exponent=0.5)
-
-    # DEBUG: split the compound expression to locate the failing op
-    try:
-        mask_inv = 1 - masks_rpt
-    except RuntimeError as e:
-        raise RuntimeError(
-            f"[MUSA DEBUG] Step 1 failed: `1 - masks_rpt`. "
-            f"masks_rpt.shape={masks_rpt.shape}, dtype={masks_rpt.dtype}, "
-            f"device={masks_rpt.device}, is_contiguous={masks_rpt.is_contiguous()}"
-        ) from e
-
-    try:
-        term = err * mask_inv
-    except RuntimeError as e:
-        raise RuntimeError(
-            f"[MUSA DEBUG] Step 2 failed: `err * mask_inv`. "
-            f"err.shape={err.shape}, err.dtype={err.dtype}, err.device={err.device}, "
-            f"mask_inv.shape={mask_inv.shape}, mask_inv.dtype={mask_inv.dtype}"
-        ) from e
-
-    try:
-        numerator = torch.sum(term, dim=2)
-    except RuntimeError as e:
-        raise RuntimeError(
-            f"[MUSA DEBUG] Step 3 failed: `torch.sum(term, dim=2)`. "
-            f"term.shape={term.shape}, term.dtype={term.dtype}, term.device={term.device}"
-        ) from e
-
-    try:
-        mask_inv2 = 1 - masks_rpt
-    except RuntimeError as e:
-        raise RuntimeError(
-            f"[MUSA DEBUG] Step 4 failed: `1 - masks_rpt` (second). "
-            f"masks_rpt.shape={masks_rpt.shape}, dtype={masks_rpt.dtype}"
-        ) from e
-
-    try:
-        denom_sum = torch.sum(mask_inv2, dim=2)
-    except RuntimeError as e:
-        raise RuntimeError(
-            f"[MUSA DEBUG] Step 5 failed: `torch.sum(mask_inv2, dim=2)`. "
-            f"mask_inv2.shape={mask_inv2.shape}, mask_inv2.dtype={mask_inv2.dtype}"
-        ) from e
-
-    try:
-        denom = torch.clip(denom_sum, min=1)
-    except RuntimeError as e:
-        raise RuntimeError(
-            f"[MUSA DEBUG] Step 6 failed: `torch.clip(denom_sum, min=1)`. "
-            f"denom_sum.shape={denom_sum.shape}, denom_sum.dtype={denom_sum.dtype}, "
-            f"denom_sum.device={denom_sum.device}"
-        ) from e
-
-    # Fix: ensure numerator and denom have the same dtype to avoid
-    # MUSA dispatch failure on float64 / float32
-    if numerator.dtype != denom.dtype:
-        numerator = numerator.to(denom.dtype)
-    err = numerator / denom
-
+    err = torch.sum(err * (1 - masks_rpt), dim=2) / \
+        torch.clip(torch.sum((1 - masks_rpt), dim=2), min=1)
     err, inds = torch.min(err, dim=1)
 
     return err, inds
@@ -239,7 +182,6 @@ def min_fde(traj: torch.Tensor, traj_gt: torch.Tensor,
     :return errs, inds: errors and indices for modes with min error,
     shape [batch_size]
     """
-    batch_size = traj.shape[0]
     num_modes = traj.shape[1]
 
     # Convert to float32 early to avoid MUDNN "Unsupported in data type: DOUBLE" error
