@@ -138,6 +138,11 @@ def traj_nll(
     shape [batch_size, sequence_length]
     :return:
     """
+    # Convert to float32 early to avoid MUDNN "Unsupported in data type: DOUBLE" error
+    pred_dist = pred_dist.float()
+    traj_gt = traj_gt.float()
+    masks = masks.float()
+
     mu_x = pred_dist[:, :, 0]
     mu_y = pred_dist[:, :, 1]
     x = traj_gt[:, :, 0]
@@ -178,6 +183,12 @@ def min_fde(traj: torch.Tensor, traj_gt: torch.Tensor,
     shape [batch_size]
     """
     num_modes = traj.shape[1]
+
+    # Convert to float32 early to avoid MUDNN "Unsupported in data type: DOUBLE" error
+    traj = traj.float()
+    traj_gt = traj_gt.float()
+    masks = masks.float()
+
     lengths = torch.sum(1 - masks, dim=1).long()
     valid_mask = lengths > 0
     traj = traj[valid_mask]
@@ -218,6 +229,11 @@ def miss_rate(
     shape [batch_size]
     """
     num_modes = traj.shape[1]
+
+    # Convert to float32 early to avoid MUDNN "Unsupported in data type: DOUBLE" error
+    traj = traj.float()
+    traj_gt = traj_gt.float()
+    masks = masks.float()
 
     traj_gt_rpt = traj_gt.unsqueeze(1).repeat(1, num_modes, 1, 1)
     masks_rpt = masks.unsqueeze(1).repeat(1, num_modes, 1)

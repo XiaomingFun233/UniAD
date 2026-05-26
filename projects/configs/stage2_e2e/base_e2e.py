@@ -267,7 +267,7 @@ model = dict(
                     attn_cfgs=dict(
                         type='MultiScaleDeformableAttention',
                         embed_dims=_dim_,
-                        num_levels=_num_levels_,
+                        num_levels=1,  # seg_head only provides single-level BEV features
                          ),
                     feedforward_channels=_feed_dim_,
                     ffn_dropout=0.1,
@@ -287,7 +287,7 @@ model = dict(
                         dict(
                             type='MultiScaleDeformableAttention',
                             embed_dims=_dim_,
-                            num_levels=_num_levels_,
+                            num_levels=1,  # seg_head only provides single-level BEV features
                         )
                     ],
                     feedforward_channels=_feed_dim_,
@@ -666,8 +666,8 @@ data = dict(
         modality=input_modality,
         eval_mod=['det', 'map', 'track','motion'],
     ),
-    shuffler_sampler=dict(type="DistributedGroupSampler"),
-    nonshuffler_sampler=dict(type="DistributedSampler"),
+    shuffler_sampler=dict(type='DistributedGroupSampler'),
+    nonshuffler_sampler=dict(type='DistributedSampler'),
 )
 optimizer = dict(
     type="AdamW",
@@ -698,8 +698,16 @@ runner = dict(type="EpochBasedRunner", max_epochs=total_epochs)
 log_config = dict(
     interval=10, hooks=[dict(type="TextLoggerHook"), dict(type="TensorboardLoggerHook")]
 )
-checkpoint_config = dict(interval=1)
-load_from = "ckpts/uniad_base_track_map.pth"
+# Save checkpoint every 100 iterations to capture steps ~500 and ~900
+# This ensures checkpoints at 500, 600, 700, 800, 900, 1000, etc.
+# max_keep_ckpts=5 limits disk usage by keeping only recent 5 checkpoints
+# NOTE: filename_tmpl must be set explicitly, otherwise mmcv defaults to epoch_{}.pth
+checkpoint_config = dict(
+    interval=500,
+    by_epoch=False,
+    max_keep_ckpts=5,
+    filename_tmpl='iter_{}.pth')
+load_from = "projects/work_dirs/stage1_track_map/base_track_map/epoch_6.pth"
 
 find_unused_parameters = True
 logger_name = 'mmdet'

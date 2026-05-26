@@ -1,3 +1,8 @@
+```
+# for training stage2 on musa
+bash run_stage2.sh
+```
+
 > [!IMPORTANT]
 > 🌟 Stay up to date at [opendrivelab.com](https://opendrivelab.com/#news)!
 
