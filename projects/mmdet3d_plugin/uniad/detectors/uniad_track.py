@@ -14,6 +14,7 @@ from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
 import copy
 import math
+import os
 from projects.mmdet3d_plugin.core.bbox.util import normalize_bbox
 from mmdet.models import build_loss
 from einops import rearrange
@@ -507,6 +508,11 @@ class UniADTrack(MVXTwoStageDetector):
         Args:
         Returns:
         """
+        if os.environ.get("ENABLE_CHANNEL_LAST", "false").lower() in ("1", "true", "yes", "on"):
+            self.img_backbone=self.img_backbone.to(memory_format=torch.channels_last)
+            self.img_neck = self.img_neck.to(memory_format=torch.channels_last)
+            img = img.to(memory_format=torch.channels_last)
+
         track_instances = self._generate_empty_tracks()
         num_frame = img.size(1)
         # init gt instances!
