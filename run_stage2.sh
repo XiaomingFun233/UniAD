@@ -25,4 +25,8 @@ export MASTER_PORT="${MASTER_PORT:-28617}"
 #export MUSA_LAUNCH_BLOCKING=1
 
 #bash "${ROOT_DIR}/tools/uniad_dist_train.sh" "${CFG}" "${GPUS}" "$@" 2>&1 | tee -a "${LOG_FILE}"
+
+export ENABLE_OPT_DEFORM_CONV=1 # 使能内部bev_kernels中优化过的kernel；
+export ENABLE_CHANNEL_LAST=1
+
 bash "${ROOT_DIR}/tools/uniad_dist_train.sh" "${CFG}" "${GPUS}" "$@"
