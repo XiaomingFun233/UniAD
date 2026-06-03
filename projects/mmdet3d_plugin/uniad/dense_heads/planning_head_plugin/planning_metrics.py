@@ -125,7 +125,7 @@ class PlanningMetric(Metric):
         trajs: torch.Tensor (B, n_future, 3)
         gt_trajs: torch.Tensor (B, n_future, 3)
         '''
-        return torch.sqrt((((trajs[:, :, :2] - gt_trajs[:, :, :2]) ** 2) * gt_trajs_mask).sum(dim=-1)) 
+        return torch.sqrt((((trajs[:, :, :2] - gt_trajs[:, :, :2]) ** 2) * gt_trajs_mask).sum(dim=-1).float())
 
     def update(self, trajs, gt_trajs, gt_trajs_mask, segmentation):
         '''
@@ -137,7 +137,9 @@ class PlanningMetric(Metric):
         trajs[..., 0] = - trajs[..., 0]
         gt_trajs[..., 0] = - gt_trajs[..., 0]
         L2 = self.compute_L2(trajs, gt_trajs, gt_trajs_mask)
-        obj_coll_sum, obj_box_coll_sum = self.evaluate_coll(trajs[:,:,:2], gt_trajs[:,:,:2], segmentation)
+        obj_coll_sum, obj_box_coll_sum = self.evaluate_coll(
+            trajs[..., :2], gt_trajs[..., :2], segmentation
+        )
 
         self.obj_col += obj_coll_sum
         self.obj_box_col += obj_box_coll_sum

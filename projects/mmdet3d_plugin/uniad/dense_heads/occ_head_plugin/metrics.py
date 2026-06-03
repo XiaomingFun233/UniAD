@@ -16,12 +16,19 @@ except ImportError:
     from torchmetrics.functional.classification import stat_scores
 
     def stat_scores_multiple_classes(prediction, target, n_classes):
-        return stat_scores(
+        scores = stat_scores(
             prediction,
             target,
             task='multiclass',
             num_classes=n_classes,
             average='none')
+
+        if isinstance(scores, torch.Tensor):
+            if scores.ndim != 2 or scores.size(-1) < 5:
+                raise ValueError(f'Unexpected stat_scores output shape: {tuple(scores.shape)}')
+            return scores[:, 0], scores[:, 1], scores[:, 3], scores[:, 4]
+
+        return scores
 
     def reduce(scores, reduction='none'):
         if reduction in (None, 'none'):
@@ -55,7 +62,7 @@ class IntersectionOverUnion(Metric):
         self.add_state('support', default=torch.zeros(n_classes), dist_reduce_fx='sum')
 
     def update(self, prediction: torch.Tensor, target: torch.Tensor):
-        tps, fps, _, fns, sups = stat_scores_multiple_classes(prediction, target, self.n_classes)
+        tps, fps, fns, sups = stat_scores_multiple_classes(prediction, target, self.n_classes)
 
         self.true_positive += tps
         self.false_positive += fps

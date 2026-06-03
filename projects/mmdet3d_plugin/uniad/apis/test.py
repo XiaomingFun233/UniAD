@@ -54,11 +54,12 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
         list: The prediction results.
     """
     model.eval()
+    rank, world_size = get_dist_info()
 
     # Occ eval init
     eval_occ = hasattr(model.module, 'with_occ_head') \
                 and model.module.with_occ_head
-    if eval_occ:
+    if eval_occ and rank == 0:
         # 30mx30m, 100mx100m at 50cm resolution
         EVALUATION_RANGES = {'30x30': (70, 130),
                             '100x100': (0, 200)}
@@ -66,20 +67,35 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
         iou_metrics = {}
         for key in EVALUATION_RANGES.keys():
             iou_metrics[key] = IntersectionOverUnion(n_classes).to('musa')
+            iou_metrics[key].sync_on_compute = False
+            iou_metrics[key].dist_sync_on_step = False
         panoptic_metrics = {}
         for key in EVALUATION_RANGES.keys():
             panoptic_metrics[key] = PanopticMetric(n_classes=n_classes, temporally_consistent=True).to('musa')
+            panoptic_metrics[key].sync_on_compute = False
+            panoptic_metrics[key].dist_sync_on_step = False
+    elif eval_occ:
+        # Keep torchmetrics state local to rank0 to avoid distributed sync
+        # barriers that can fail on MUSA backend.
+        EVALUATION_RANGES = {'30x30': (70, 130),
+                            '100x100': (0, 200)}
+        iou_metrics = {}
+        panoptic_metrics = {}
 
     # Plan eval init
     eval_planning =  hasattr(model.module, 'with_planning_head') \
                       and model.module.with_planning_head
-    if eval_planning:
-        planning_metrics = PlanningMetric().to('musa')
+    planning_metrics = None
+    if eval_planning and rank == 0:
+        # Keep planning metric accumulation on rank0 to avoid distributed
+        # sync barrier failures in torchmetrics on MUSA.
+        planning_metrics = PlanningMetric().to('cpu')
+        planning_metrics.sync_on_compute = False
+        planning_metrics.dist_sync_on_step = False
         
     bbox_results = []
     mask_results = []
     dataset = data_loader.dataset
-    rank, world_size = get_dist_info()
     if rank == 0:
         prog_bar = mmcv.ProgressBar(len(dataset))
     time.sleep(2)  # This line can prevent deadlock problem in some cases.
@@ -99,20 +115,27 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
                 result[0]['planning_traj'] = result[0]['planning']['result_planning']['sdc_traj']
                 result[0]['planning_traj_gt'] = result[0]['planning']['planning_gt']['sdc_planning']
                 result[0]['command'] = result[0]['planning']['planning_gt']['command']
-                planning_metrics(pred_sdc_traj[:, :6, :2], sdc_planning[0][0,:, :6, :2], sdc_planning_mask[0][0,:, :6, :2], segmentation[0][:, [1,2,3,4,5,6]])
+                if planning_metrics is not None:
+                    planning_metrics(
+                        pred_sdc_traj[:, :6, :2].detach().cpu(),
+                        sdc_planning[0][0, :, :6, :2].detach().cpu(),
+                        sdc_planning_mask[0][0, :, :6, :2].detach().cpu(),
+                        segmentation[0][:, [1, 2, 3, 4, 5, 6]].detach().cpu(),
+                    )
 
             # Eval Occ
             if eval_occ:
                 occ_has_invalid_frame = data['gt_occ_has_invalid_frame'][0]
                 occ_to_eval = not occ_has_invalid_frame.item()
                 if occ_to_eval and 'occ' in result[0].keys():
-                    num_occ += 1
-                    for key, grid in EVALUATION_RANGES.items():
-                        limits = slice(grid[0], grid[1])
-                        iou_metrics[key](result[0]['occ']['seg_out'][..., limits, limits].contiguous(),
-                                        result[0]['occ']['seg_gt'][..., limits, limits].contiguous())
-                        panoptic_metrics[key](result[0]['occ']['ins_seg_out'][..., limits, limits].contiguous().detach(),
-                                                result[0]['occ']['ins_seg_gt'][..., limits, limits].contiguous())
+                    if rank == 0:
+                        num_occ += 1
+                        for key, grid in EVALUATION_RANGES.items():
+                            limits = slice(grid[0], grid[1])
+                            iou_metrics[key](result[0]['occ']['seg_out'][..., limits, limits].contiguous(),
+                                            result[0]['occ']['seg_gt'][..., limits, limits].contiguous())
+                            panoptic_metrics[key](result[0]['occ']['ins_seg_out'][..., limits, limits].contiguous().detach(),
+                                                    result[0]['occ']['ins_seg_gt'][..., limits, limits].contiguous())
 
             # Pop out unnecessary occ results, avoid appending it to cpu when collect_results_cpu
             if os.environ.get('ENABLE_PLOT_MODE', None) is None:
@@ -159,13 +182,14 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
         else:
             mask_results = None
 
-    if eval_planning:
+    planning_results = None
+    if eval_planning and planning_metrics is not None:
         planning_results = planning_metrics.compute()
         planning_metrics.reset()
 
     ret_results = dict()
     ret_results['bbox_results'] = bbox_results
-    if eval_occ:
+    if eval_occ and rank == 0:
         occ_results = {}
         for key, grid in EVALUATION_RANGES.items():
             panoptic_scores = panoptic_metrics[key].compute()
@@ -180,7 +204,7 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
         occ_results['num_occ'] = num_occ  # count on one gpu
         occ_results['ratio_occ'] = num_occ / len(dataset)  # count on one gpu, but reflect the relative ratio
         ret_results['occ_results_computed'] = occ_results
-    if eval_planning:
+    if eval_planning and planning_results is not None:
         ret_results['planning_results_computed'] = planning_results
 
     if mask_results is not None:
@@ -190,49 +214,54 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
 
 def collect_results_cpu(result_part, size, tmpdir=None):
     rank, world_size = get_dist_info()
-    # create a tmp dir if it is not specified
+    # Use filesystem synchronization to avoid MUSA collectives timing out
+    # at the end of distributed evaluation.
     if tmpdir is None:
-        MAX_LEN = 512
-        # 32 is whitespace
-        dir_tensor = torch.full((MAX_LEN, ),
-                                32,
-                                dtype=torch.uint8,
-                                device='musa')
-        if rank == 0:
-            mmcv.mkdir_or_exist('.dist_test')
-            tmpdir = tempfile.mkdtemp(dir='.dist_test')
-            tmpdir = torch.tensor(
-                bytearray(tmpdir.encode()), dtype=torch.uint8, device='musa')
-            dir_tensor[:len(tmpdir)] = tmpdir
-        dist.broadcast(dir_tensor, 0)
-        tmpdir = dir_tensor.cpu().numpy().tobytes().decode().rstrip()
+        mmcv.mkdir_or_exist('.dist_test')
+        run_id = os.environ.get('TORCHELASTIC_RUN_ID') or os.environ.get('MASTER_PORT') or 'default'
+        tmpdir = osp.join('.dist_test', f'collect_{run_id}')
+        mmcv.mkdir_or_exist(tmpdir)
     else:
         mmcv.mkdir_or_exist(tmpdir)
-    # dump the part result to the dir
-    mmcv.dump(result_part, osp.join(tmpdir, f'part_{rank}.pkl'))
-    dist.barrier()
-    # collect all parts
+
+    part_file = osp.join(tmpdir, f'part_{rank}.pkl')
+    mmcv.dump(result_part, part_file)
+
+    # Non-zero ranks return once local shard is persisted.
     if rank != 0:
         return None
-    else:
-        # load results of all parts from tmp dir
-        part_list = []
-        for i in range(world_size):
-            part_file = osp.join(tmpdir, f'part_{i}.pkl')
-            part_list.append(mmcv.load(part_file))
-        # sort the results
-        ordered_results = []
-        '''
-        bacause we change the sample of the evaluation stage to make sure that each gpu will handle continuous sample,
-        '''
-        #for res in zip(*part_list):
-        for res in part_list:  
-            ordered_results.extend(list(res))
-        # the dataloader may pad some samples
-        ordered_results = ordered_results[:size]
-        # remove tmp dir
-        shutil.rmtree(tmpdir)
-        return ordered_results
+
+    # Rank0 polls for all shard files instead of calling dist.barrier().
+    timeout_s = int(os.environ.get('UNIAD_COLLECT_TIMEOUT', '1200'))
+    poll_interval_s = float(os.environ.get('UNIAD_COLLECT_POLL', '1.0'))
+    deadline = time.time() + timeout_s
+    expected_files = [osp.join(tmpdir, f'part_{i}.pkl') for i in range(world_size)]
+
+    while True:
+        ready = [osp.exists(path) for path in expected_files]
+        if all(ready):
+            break
+        if time.time() > deadline:
+            missing = [path for path, ok in zip(expected_files, ready) if not ok]
+            raise TimeoutError(
+                f'collect_results_cpu timeout waiting shard files in {tmpdir}. missing={missing}'
+            )
+        time.sleep(poll_interval_s)
+
+    part_list = [mmcv.load(path) for path in expected_files]
+    # sort the results
+    ordered_results = []
+    '''
+    bacause we change the sample of the evaluation stage to make sure that each gpu will handle continuous sample,
+    '''
+    #for res in zip(*part_list):
+    for res in part_list:
+        ordered_results.extend(list(res))
+    # the dataloader may pad some samples
+    ordered_results = ordered_results[:size]
+    # remove tmp dir
+    shutil.rmtree(tmpdir)
+    return ordered_results
 
 
 def collect_results_gpu(result_part, size):
